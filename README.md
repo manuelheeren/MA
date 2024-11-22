@@ -8,9 +8,9 @@ The strategy trades based on price momentum relative to the previous day's close
 
 ## Structure
 
-- `backtest.py`: Core backtesting engine
-- `strategy.py`: Trading strategy implementation
 - `data_handler.py`: Data loading and processing
+- `strategy.py`: Trading strategy implementation
+- `backtest.py`: Core backtesting engine
 - `market_analysis.py`: Market regime classification and analysis
 - `util_volume_analysis.py`: Volume analysis utilities
 
@@ -18,8 +18,8 @@ The strategy trades based on price momentum relative to the previous day's close
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/trading-strategy.git
-cd trading-strategy
+git clone https://github.com/JuliusScheuerer/ASIM_TSMOM_Trading_Strategy.git
+cd ASIM_TSMOM_Trading_Strategy
 ```
 
 2. Create virtual environment:
