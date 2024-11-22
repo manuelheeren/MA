@@ -1,0 +1,23 @@
+# Data and results
+datasets/
+*.csv
+*.png
+*.jpg
+*.jpeg
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.env
+.venv
+.pytest_cache/
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+.DS_Store
