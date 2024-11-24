@@ -72,8 +72,8 @@ class MarketAnalysis:
                 'volume': self.data.groupby('date')['volume'].sum()
             })
             
-            # Fill any missing values with previous values to ensure continuity
-            self.daily_data = self.daily_data.fillna(method='ffill')
+            # Use ffill() instead of fillna(method='ffill')
+            self.daily_data = self.daily_data.ffill()
             
             # Calculate indicators with min_periods=1 to start earlier
             self.daily_data['ma_short'] = self.daily_data['close'].ewm(span=self.short_ma, min_periods=1).mean()
@@ -84,14 +84,14 @@ class MarketAnalysis:
                 'h-l': self.daily_data['high'] - self.daily_data['low'],
                 'h-pc': abs(self.daily_data['high'] - self.daily_data['close'].shift(1)),
                 'l-pc': abs(self.daily_data['low'] - self.daily_data['close'].shift(1))
-            }).fillna(0)  # Fill first row NaNs with 0
+            }).fillna(0)  # This fillna is fine as it's using a value, not a method
             
             self.daily_data['atr'] = tr.max(axis=1).ewm(span=self.vol_window, min_periods=1).mean()
         else:
             self.daily_data = self.data.copy()
         
         # Remove any remaining NaN values
-        self.daily_data.dropna(inplace=True)
+        self.daily_data = self.daily_data.dropna()
     
     def classify_regimes(self) -> pd.DataFrame:
         """Classify market regimes with improved continuity"""
@@ -101,7 +101,7 @@ class MarketAnalysis:
         conditions = pd.DataFrame({
             'above_long_ma': self.daily_data['close'] > self.daily_data['ma_long'],
             'rising_short_ma': self.daily_data['ma_short'] > self.daily_data['ma_short'].shift(1)
-        }).fillna(False)  # Fill first row with False
+        }).fillna(False)  # This fillna is fine as it's using a value, not a method
         
         trends = pd.Series(index=self.daily_data.index, dtype='object')
         trends[conditions.all(axis=1)] = TrendRegime.UPTREND.value
@@ -141,15 +141,6 @@ class MarketAnalysis:
         
         results = {}
         
-        # Print debug info
-        print("\nRegime Classification Summary:")
-        print(f"Total trades: {len(trades_df)}")
-        for regime in TrendRegime:
-            regime_trades = trades_with_regimes[trades_with_regimes['trend'] == regime.value]
-            if len(regime_trades) > 0:
-                print(f"{regime.value}: {len(regime_trades)} trades")
-                print(f"Date range: {regime_trades['entry_time'].min().date()} - {regime_trades['entry_time'].max().date()}")
-        
         # Calculate metrics for each regime
         for trend in TrendRegime:
             trend_trades = trades_with_regimes[trades_with_regimes['trend'] == trend.value]
@@ -173,14 +164,14 @@ class MarketAnalysis:
                     sharpe=self._calculate_regime_sharpe(vol_trades)
                 )
         
-        return results
+        return results, trades_with_regimes  # Return the trades with regimes for summary
 
     def plot_analysis(self, trades_df: pd.DataFrame, save_path: Optional[str] = None) -> None:
         """Create visualization of regime analysis"""
         if self.regimes is None:
             self.classify_regimes()
                 
-        regime_results = self.analyze_performance(trades_df)
+        regime_results, _ = self.analyze_performance(trades_df)  # Unpack only the metrics
             
         fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(15, 12))
             
@@ -259,7 +250,11 @@ def format_regime_metrics(name: str, metrics: RegimeMetrics) -> str:
 {sharpe_str}"""
 
 def main():
-    logging.basicConfig(level=logging.INFO)
+    # Configure logging with a cleaner format
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(message)s'
+    )
     logger = logging.getLogger(__name__)
 
     try:
@@ -280,10 +275,34 @@ def main():
         market_analyzer = MarketAnalysis(data)
         market_analyzer.classify_regimes()
         
-        # Get performance metrics
-        regime_metrics = market_analyzer.analyze_performance(trades_df)
+        # Get performance metrics and trades with regime data
+        regime_metrics, trades_with_regimes = market_analyzer.analyze_performance(trades_df)
         
-        # Print results
+        # Print regime methodology explanation
+        print("\n=== Regime Classification Methodology ===")
+        print("Trend Regimes are classified using two moving averages:")
+        print(f"- Short-term EMA: {market_analyzer.short_ma} periods")
+        print(f"- Long-term EMA: {market_analyzer.long_ma} periods")
+        print("UPTREND: Price above long MA and short MA rising")
+        print("DOWNTREND: Price below long MA and short MA falling")
+        print("SIDEWAYS: Mixed conditions - either price is above long MA but short MA falling,")
+        print("          or price is below long MA but short MA rising")
+        
+        print("\nVolatility Regimes are based on ATR (Average True Range):")
+        print(f"- ATR Period: {market_analyzer.vol_window}")
+        print("HIGH: Top 33% of ATR values")
+        print("MEDIUM: Middle 33% of ATR values")
+        print("LOW: Bottom 33% of ATR values")
+        
+        # Print regime classification summary
+        print("\n=== Regime Classification Summary ===")
+        print(f"Total trades: {len(trades_df)}")
+        for regime in TrendRegime:
+            regime_trades = trades_with_regimes[trades_with_regimes['trend'] == regime.value]
+            if len(regime_trades) > 0:
+                print(f"{regime.value}: {len(regime_trades)} trades")
+        
+        # Print detailed performance analysis
         print("\n=== Market Regime Analysis ===")
         
         # Print trend regimes
