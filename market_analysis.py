@@ -30,10 +30,11 @@ class RegimeMetrics:
     sharpe: Optional[float] = None
 
 class MarketAnalysis:
-    def __init__(self, data: pd.DataFrame):
+    def __init__(self, data: pd.DataFrame, initial_capital: float = 100000):
         self.data = data
         self.daily_data = None
         self.regimes = None
+        self.initial_capital = initial_capital
         
         # Parameters for regime classification
         self.short_ma = 20
@@ -43,21 +44,44 @@ class MarketAnalysis:
         self._prepare_daily_data()
 
     def _calculate_regime_sharpe(self, regime_trades: pd.DataFrame) -> Optional[float]:
-        """Calculate Sharpe ratio using daily trade PnLs"""
-        if len(regime_trades) < 20:
+        """
+        Calculate Sharpe ratio for a specific market regime using percentage returns
+        
+        Parameters:
+        -----------
+        regime_trades : pd.DataFrame
+            DataFrame containing trades for a specific regime
+            
+        Returns:
+        --------
+        float or None
+            Sharpe ratio for the regime or None if insufficient data
+        """
+        if len(regime_trades) < 20:  # Minimum trades requirement
             return None
             
-        # Calculate daily returns from trade PnLs
-        daily_returns = regime_trades.groupby(
-            pd.to_datetime(regime_trades['entry_time']).dt.date
-        )['pnl'].sum()
+        # Create a copy to avoid SettingWithCopyWarning
+        regime_data = regime_trades.copy()
         
-        if len(daily_returns) < 20 or daily_returns.std() == 0:
+        # Calculate percentage returns
+        regime_data.loc[:, 'return_pct'] = regime_data['pnl'] / self.initial_capital * 100
+            
+        # Calculate daily returns
+        daily_returns = regime_data.groupby(
+            pd.to_datetime(regime_data['entry_time']).dt.date
+        )['return_pct'].sum()
+        
+        if len(daily_returns) < 20 or daily_returns.std() == 0:  # Minimum days requirement
+            return None
+            
+        # Calculate number of trading days in regime
+        trading_days = daily_returns.index.nunique()
+        if trading_days < 20:
             return None
         
-        # Annualize returns and volatility
-        annualized_return = daily_returns.mean() * 252
-        annualized_vol = daily_returns.std() * np.sqrt(252)
+        # Annualize using actual trading days in regime
+        annualized_return = daily_returns.mean() * trading_days
+        annualized_vol = daily_returns.std() * np.sqrt(trading_days)
         
         return annualized_return / annualized_vol
         
@@ -127,44 +151,49 @@ class MarketAnalysis:
         if self.regimes is None:
             self.classify_regimes()
             
+        # Create a copy of trades DataFrame and add percentage returns
+        trades_analysis = trades_df.copy()
+        trades_analysis.loc[:, 'return_pct'] = trades_analysis['pnl'] / self.initial_capital * 100
+            
         # Merge trades with regimes, keeping all trades
-        trades_with_regimes = trades_df.merge(
+        trades_with_regimes = trades_analysis.merge(
             self.regimes,
-            left_on=pd.to_datetime(trades_df['entry_time']).dt.date,
+            left_on=pd.to_datetime(trades_analysis['entry_time']).dt.date,
             right_index=True,
             how='left'
         )
         
-        # Mark unclassified trades
+        # Handle unclassified trades using loc
         trades_with_regimes.loc[trades_with_regimes['trend'].isna(), 'trend'] = TrendRegime.UNCLASSIFIED.value
         trades_with_regimes.loc[trades_with_regimes['volatility'].isna(), 'volatility'] = 'unclassified'
         
         results = {}
         
-        # Calculate metrics for each regime
+        # Calculate metrics for each trend regime
         for trend in TrendRegime:
-            trend_trades = trades_with_regimes[trades_with_regimes['trend'] == trend.value]
-            if len(trend_trades) > 0:
+            trend_data = trades_with_regimes.loc[trades_with_regimes['trend'] == trend.value].copy()
+            if len(trend_data) > 0:
                 results[f'{trend.value}_regime'] = RegimeMetrics(
-                    n_trades=len(trend_trades),
-                    win_rate=len(trend_trades[trend_trades['pnl'] > 0]) / len(trend_trades),
-                    avg_pnl=trend_trades['pnl'].mean(),
-                    total_pnl=trend_trades['pnl'].sum(),
-                    sharpe=self._calculate_regime_sharpe(trend_trades)
+                    n_trades=len(trend_data),
+                    win_rate=len(trend_data[trend_data['pnl'] > 0]) / len(trend_data),
+                    avg_pnl=trend_data['pnl'].mean(),
+                    total_pnl=trend_data['pnl'].sum(),
+                    sharpe=self._calculate_regime_sharpe(trend_data)
                 )
         
+        # Calculate metrics for each volatility regime
         for vol in VolatilityRegime:
-            vol_trades = trades_with_regimes[trades_with_regimes['volatility'] == vol.value]
-            if len(vol_trades) > 0:
+            vol_data = trades_with_regimes.loc[trades_with_regimes['volatility'] == vol.value].copy()
+            if len(vol_data) > 0:
                 results[f'{vol.value}_vol'] = RegimeMetrics(
-                    n_trades=len(vol_trades),
-                    win_rate=len(vol_trades[vol_trades['pnl'] > 0]) / len(vol_trades),
-                    avg_pnl=vol_trades['pnl'].mean(),
-                    total_pnl=vol_trades['pnl'].sum(),
-                    sharpe=self._calculate_regime_sharpe(vol_trades)
+                    n_trades=len(vol_data),
+                    win_rate=len(vol_data[vol_data['pnl'] > 0]) / len(vol_data),
+                    avg_pnl=vol_data['pnl'].mean(),
+                    total_pnl=vol_data['pnl'].sum(),
+                    sharpe=self._calculate_regime_sharpe(vol_data)
                 )
         
-        return results, trades_with_regimes  # Return the trades with regimes for summary
+        return results, trades_with_regimes
 
     def plot_analysis(self, trades_df: pd.DataFrame, save_path: Optional[str] = None) -> None:
         """Create visualization of regime analysis"""
@@ -232,22 +261,22 @@ class MarketAnalysis:
             plt.show()
 
 def format_regime_metrics(name: str, metrics: RegimeMetrics) -> str:
-    """Format regime metrics with clearer Sharpe ratio display"""
-    sharpe_str = ""
-    if metrics.sharpe is not None:
-        sharpe_str = f"    Sharpe Ratio: {metrics.sharpe:.2f}"
-        if metrics.n_trades < 30:
-            sharpe_str += " (limited data)"
-    else:
-        sharpe_str = "    Sharpe Ratio: Insufficient data"
-    
-    return f"""
-{name}:
-    Number of Trades: {metrics.n_trades}
-    Win Rate: {metrics.win_rate:.2%}
-    Average P&L: ${metrics.avg_pnl:.2f}
-    Total P&L: ${metrics.total_pnl:.2f}
-{sharpe_str}"""
+        """Format regime metrics with clearer Sharpe ratio display"""
+        sharpe_str = ""
+        if metrics.sharpe is not None:
+            sharpe_str = f"    Sharpe Ratio: {metrics.sharpe:.2f}"
+            if metrics.n_trades < 30:
+                sharpe_str += " (limited data)"
+        else:
+            sharpe_str = "    Sharpe Ratio: Insufficient data"
+        
+        return f"""
+    {name}:
+        Number of Trades: {metrics.n_trades}
+        Win Rate: {metrics.win_rate:.2%}
+        Average P&L: ${metrics.avg_pnl:.2f}
+        Total P&L: ${metrics.total_pnl:.2f}
+    {sharpe_str}"""
 
 def main():
     # Configure logging with a cleaner format
