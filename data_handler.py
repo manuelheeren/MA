@@ -5,16 +5,12 @@ Data Handling:
     Created market session separation (Asian/London/US)
     Handle timezone conversions and data formatting
 """
-
 import pandas as pd
 import numpy as np
 from pathlib import Path
 from typing import Optional, Dict, Union
 import pytz
 from datetime import datetime, time
-from typing import List, Union
-
-
 class DukasCopyDataHandler:
     """
     Handles data loading and processing for DukasCopy historical price data.
@@ -34,37 +30,39 @@ class DukasCopyDataHandler:
         self.processed_data: Optional[pd.DataFrame] = None
         self.session_data: Dict[str, pd.DataFrame] = {}
         
-    def load_data(self, file_paths: List[Union[str, Path]]) -> pd.DataFrame:
-    
-        all_data = []  # To store data from all files
-    
-        for file_path in file_paths:
-            # Read the CSV file
-            raw_data = pd.read_csv(file_path, parse_dates=[0])
+    def load_data(self, file_path: Union[str, Path]) -> pd.DataFrame:
+        """
+        Load and process DukasCopy CSV data file
         
-            # Rename columns to standard format
-            raw_data.columns = ['timestamp', 'open', 'high', 'low', 'close', 'volume']
+        Parameters:
+        -----------
+        file_path : str or Path
+            Path to the CSV file
+            
+        Returns:
+        --------
+        pd.DataFrame
+            Processed DataFrame with proper timestamps and validated data
+        """
+        # Read the CSV file
+        self.raw_data = pd.read_csv(file_path, parse_dates=[0])
         
-            # Convert timestamp to UTC
-            raw_data['timestamp'] = pd.to_datetime(raw_data['timestamp'], format='%d.%m.%Y %H:%M:%S.%f', utc=True)
+        # Rename columns to standard format
+        self.raw_data.columns = ['timestamp', 'open', 'high', 'low', 'close', 'volume']
         
-         # Set timestamp as index
-            raw_data.set_index('timestamp', inplace=True)
+        # Convert timestamp to UTC
+        self.raw_data['timestamp'] = pd.to_datetime(self.raw_data['timestamp'],  format='%d.%m.%Y %H:%M:%S.%f', utc=True)
         
-            # Append to the list
-            all_data.append(raw_data)
-    
-        # Concatenate all the dataframes into one
-        self.raw_data = pd.concat(all_data).sort_index()
-
-        # Perform basic data validation
+        # Set timestamp as index
+        self.raw_data.set_index('timestamp', inplace=True)
+        
+        # Basic data validation
         self._validate_data()
-    
+        
         # Process the data
         self._process_data()
-    
+        
         return self.processed_data
-
     
     def _validate_data(self) -> None:
         """
@@ -186,7 +184,6 @@ class DukasCopyDataHandler:
             raise ValueError("No processed data available. Run load_data first.")
         
         self.processed_data.to_csv(output_path)
-
     def get_timestamp_range(self) -> tuple:
         """
         Get the date range of the data
