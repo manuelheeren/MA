@@ -1,7 +1,7 @@
 """
 Strategy Implementation
-    Core momentum strategy based on previous day's close
-    Entry logic at session starts
+    Session-specific overnight momentum strategy 
+    Each session compares its opening price to its previous session close
     Fixed SL/TP based on tick value (350 ticks ≈ $17.5)
     Re-entry mechanism with up to 3 attempts
     Session-based trade management
@@ -12,13 +12,15 @@ from typing import List, Optional
 import pandas as pd
 from datetime import time
 import logging
+from collections import defaultdict
 
 @dataclass(frozen=True)
 class SessionTime:
-    """Immutable session time configuration"""
+    """Immutable session time configuration with closing times"""
     name: str
-    start: time
-    end: time
+    start: time  # Session start time
+    end: time    # Session end time
+    close: time  # Time to use as session close (for next day comparison)
 
 @dataclass
 class TradeSetup:
@@ -28,6 +30,7 @@ class TradeSetup:
     stop_loss: float
     take_profit: float
     attempt: int
+    ref_close: float  # Added to store reference closing price
 
 @dataclass
 class Trade:
@@ -51,11 +54,11 @@ class Trade:
         return self.pnl / 17.5 if self.pnl is not None else None
 
 class TradingStrategy:
-    # Market session definitions
+    # Market session definitions with closing times
     SESSIONS = [
-        SessionTime('asian', time(0, 0), time(8, 0)),
-        SessionTime('london', time(8, 0), time(16, 0)),
-        SessionTime('us', time(13, 0), time(21, 0))
+        SessionTime('asian', time(0, 0), time(8, 0), time(7, 59)),
+        SessionTime('london', time(8, 0), time(16, 0), time(15, 59)),
+        SessionTime('us', time(13, 0), time(21, 0), time(20, 59))
     ]
     
     # Strategy constants
@@ -68,7 +71,38 @@ class TradingStrategy:
         self.risk_percent = risk_percent
         self.trades: List[Trade] = []
 
-    def _create_trade_setup(self, price: float, direction: str, attempt: int) -> TradeSetup:
+    def _get_previous_session_close(self, current_time: pd.Timestamp, session: SessionTime) -> Optional[float]:
+        """
+        Get the closing price from the previous session
+        
+        Parameters:
+        -----------
+        current_time : pd.Timestamp
+            Current time for trade entry consideration
+        session : SessionTime
+            Session configuration including closing time
+            
+        Returns:
+        --------
+        Optional[float]
+            Previous session's closing price or None if not found
+        """
+        # Get previous trading day
+        prev_day = current_time.normalize() - pd.Timedelta(days=1)
+        
+        # Find the last price at session close time
+        prev_close_time = prev_day.replace(
+            hour=session.close.hour,
+            minute=session.close.minute
+        )
+        
+        # Get the closest price data before or at closing time
+        prev_day_data = self.data[self.data.index <= prev_close_time]
+        if not prev_day_data.empty:
+            return prev_day_data.iloc[-1]['close']
+        return None
+
+    def _create_trade_setup(self, price: float, direction: str, attempt: int, ref_close: float) -> TradeSetup:
         """Create trade setup with position sizing"""
         r_multiple = attempt if attempt > 1 else 1
         sl_distance = self.TICK_VALUE
@@ -80,7 +114,7 @@ class TradingStrategy:
             stop_loss = price + sl_distance
             take_profit = price - (sl_distance * r_multiple)
             
-        return TradeSetup(direction, price, stop_loss, take_profit, attempt)
+        return TradeSetup(direction, price, stop_loss, take_profit, attempt, ref_close)
 
     def _should_enter_trade(self, current_price: float, prev_close: float) -> Optional[str]:
         """Determine trade direction based on momentum"""
@@ -91,21 +125,30 @@ class TradingStrategy:
         return None
 
     def generate_signals(self) -> None:
-        """Generate trading signals for all sessions"""
+        """Generate trading signals for all sessions with proper weekend handling"""
         for date in self.data['date'].unique():
+            # Skip weekends
+            if pd.Timestamp(date).weekday() >= 5:  # 5 = Saturday, 6 = Sunday
+                continue
+                
             for session in self.SESSIONS:
                 # Create session start timestamp
                 session_start = pd.Timestamp(f"{date} {session.start}", tz='UTC')
                 if session_start not in self.data.index:
                     continue
                 
-                # Get data at session start
-                session_data = self.data.loc[session_start]
+                # Get previous session's closing price
+                prev_close = self._get_previous_session_close(session_start, session)
+                if prev_close is None:
+                    continue  # Skip if no previous close available
+                
+                # Get opening price for current session
+                session_open = self.data.loc[session_start, 'close']
                 
                 # Check for trade setup
-                direction = self._should_enter_trade(session_data['close'], session_data['prev_close'])
+                direction = self._should_enter_trade(session_open, prev_close)
                 if direction:
-                    setup = self._create_trade_setup(session_data['close'], direction, attempt=1)
+                    setup = self._create_trade_setup(session_open, direction, attempt=1, ref_close=prev_close)
                     self.trades.append(Trade(session_start, setup, session.name))
 
     def _close_trade(self, trade: Trade, exit_time: pd.Timestamp, exit_price: float, 
@@ -124,15 +167,14 @@ class TradingStrategy:
             trade.pnl = (exit_price - trade.setup.entry_price) * multiplier
 
     def simulate_trades(self) -> None:
-        """
-        Simulate trades with re-entry logic
+        """Simulate trades with proper re-entry handling"""
+        # Process trades chronologically
+        processed_trades = []
+        trades_to_process = self.trades.copy()  # Start with initial trades
         
-        All trades (including re-entries):
-        - Can hit TP (take profit)
-        - Can hit SL (stop loss)
-        - Are closed at session end if neither TP nor SL is hit
-        """
-        for trade in self.trades:
+        while trades_to_process:
+            trade = trades_to_process.pop(0)  # Get next trade to process
+            
             # Find session end time
             session_end = next(s.end for s in self.SESSIONS if s.name == trade.session)
             session_end = pd.Timestamp(f"{trade.entry_time.date()} {session_end}", tz='UTC')
@@ -162,15 +204,22 @@ class TradingStrategy:
                         setup = self._create_trade_setup(
                             trade.setup.stop_loss,
                             trade.setup.direction,
-                            trade.setup.attempt + 1
+                            trade.setup.attempt + 1,
+                            trade.setup.ref_close  # Keep original reference close
                         )
-                        self.trades.append(Trade(timestamp, setup, trade.session))
+                        new_trade = Trade(timestamp, setup, trade.session)
+                        trades_to_process.append(new_trade)  # Add to processing queue
                     break
             
             # Close at session end if neither TP nor SL was hit
             if not trade_closed:
                 last_price = session_prices.iloc[-1]['close'] if not session_prices.empty else trade.setup.entry_price
                 self._close_trade(trade, session_end, last_price, 'session_close')
+            
+            processed_trades.append(trade)
+        
+        # Update trades list with all processed trades
+        self.trades = processed_trades
 
     def get_trade_data(self) -> pd.DataFrame:
         """Convert trades to DataFrame for analysis"""
@@ -185,5 +234,6 @@ class TradingStrategy:
             'status': t.status,
             'pnl': t.pnl,
             'holding_time': t.holding_time,
-            'r_multiple': t.r_multiple
+            'r_multiple': t.r_multiple,
+            'ref_close': t.setup.ref_close  # Added to output for analysis
         } for t in self.trades])
