@@ -1,227 +1,164 @@
-"""
-Data Handling:
-    Implemented DukasCopy data loading
-    Added data cleaning and validation
-    Created market session separation (Asian/London/US)
-    Handle timezone conversions and data formatting
-"""
 import pandas as pd
-import numpy as np
 from pathlib import Path
-from typing import Optional, Dict, Union
-import pytz
-from datetime import datetime, time
-class DukasCopyDataHandler:
-    """
-    Handles data loading and processing for DukasCopy historical price data.
-    Focuses on market session separation and data validation.
-    """
+import logging
+from datetime import time
+from enum import Enum
+from typing import List
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+class Asset(Enum):
+    """Trading assets with their specific properties"""
+    XAUUSD = {
+        "name": "XAUUSD",
+        "files": [
+            "datasets/raw/XAUUSD/Nov23-Nov24/XAUUSD_1M_BID.csv"
+        ]
+    }
+    BTCUSD = {
+        "name": "BTCUSD",
+        "files": [
+            "datasets/raw/BTCUSD/Jan22-Oct22/BTCUSD_1M_BID_01.01.2022-31.10.2022.csv",
+            "datasets/raw/BTCUSD/Nov22-Oct23/BTCUSD_1M_BID_01.11.2022-31.10.2023.csv",
+            "datasets/raw/BTCUSD/Nov23-Oct24/BTCUSD_1M_BID_01.11.2023-01.11.2024.csv"
+        ]
+    }
+    SPY = {
+        "name": "SPY",
+        "files": [
+            "datasets/raw/SPY/Jan22-Jun22/SPY.USUSD_Candlestick_1_M_BID_01.01.2022-30.06.2022.csv",
+            "datasets/raw/SPY/Jul22-Dec22/SPY.USUSD_Candlestick_1_M_BID_01.07.2022-31.12.2022.csv",
+            "datasets/raw/SPY/Jan23-Jun23/SPY.USUSD_Candlestick_1_M_BID_01.01.2023-30.06.2023.csv",
+            "datasets/raw/SPY/Jul23-Dec23/SPY.USUSD_Candlestick_1_M_BID_01.07.2023-31.12.2023.csv",
+            "datasets/raw/SPY/Jan24-Jun24/SPY.USUSD_Candlestick_1_M_BID_01.01.2024-30.06.2024.csv",
+            "datasets/raw/SPY/Jul24-Nov24/SPY.USUSD_Candlestick_1_M_BID_01.07.2024-30.11.2024.csv"
+        ]
+    }
+
+    @property
+    def files(self) -> List[str]:
+        return self.value["files"]
     
-    # Market session times in UTC
+    @property
+    def name(self) -> str:
+        return self.value["name"]
+
+class DataHandler:
+    """Basic data handler with session handling"""
+    
+    # Standard market sessions for all assets
     SESSIONS = {
         'asian': (time(0, 0), time(8, 0)),
         'london': (time(8, 0), time(16, 0)),
         'us': (time(13, 0), time(21, 0))
     }
     
-    def __init__(self):
-        """Initialize the data handler"""
-        self.raw_data: Optional[pd.DataFrame] = None
-        self.processed_data: Optional[pd.DataFrame] = None
-        self.session_data: Dict[str, pd.DataFrame] = {}
+    def process_asset_data(self, asset: Asset) -> None:
+        """Process all data files for a given asset"""
+        logger.info(f"Processing {asset.name} data...")
         
-    def load_data(self, file_path: Union[str, Path]) -> pd.DataFrame:
-        """
-        Load and process DukasCopy CSV data file
+        # Create processed directory
+        processed_dir = Path(f"datasets/processed/{asset.name}")
+        processed_dir.mkdir(parents=True, exist_ok=True)
         
-        Parameters:
-        -----------
-        file_path : str or Path
-            Path to the CSV file
+        # Load and combine all data files
+        dfs = []
+        for file_path in asset.files:
+            file_path = Path(file_path)
+            if not file_path.exists():
+                logger.warning(f"File not found: {file_path}")
+                continue
+                
+            logger.info(f"Reading file: {file_path}")
+            df = pd.read_csv(file_path)
             
-        Returns:
-        --------
-        pd.DataFrame
-            Processed DataFrame with proper timestamps and validated data
-        """
-        # Read the CSV file
-        self.raw_data = pd.read_csv(file_path, parse_dates=[0])
+            # Convert timestamp
+            df['timestamp'] = pd.to_datetime(
+                df['Gmt time'],
+                format='%d.%m.%Y %H:%M:%S.%f',
+                utc=True
+            )
+            
+            # Standardize column names
+            df.rename(columns={
+                'Open': 'open',
+                'High': 'high',
+                'Low': 'low',
+                'Close': 'close',
+                'Volume': 'volume'
+            }, inplace=True)
+            
+            dfs.append(df)
         
-        # Rename columns to standard format
-        self.raw_data.columns = ['timestamp', 'open', 'high', 'low', 'close', 'volume']
+        if not dfs:
+            logger.error(f"No valid data files found for {asset.name}")
+            return
         
-        # Convert timestamp to UTC
-        self.raw_data['timestamp'] = pd.to_datetime(self.raw_data['timestamp'],  format='%d.%m.%Y %H:%M:%S.%f', utc=True)
+        # Combine all dataframes
+        combined_df = pd.concat(dfs, ignore_index=True)
+        
+        # Remove duplicates and sort
+        combined_df.drop_duplicates(subset=['timestamp'], keep='last', inplace=True)
+        combined_df.sort_values('timestamp', inplace=True)
         
         # Set timestamp as index
-        self.raw_data.set_index('timestamp', inplace=True)
+        combined_df.set_index('timestamp', inplace=True)
         
-        # Basic data validation
-        self._validate_data()
+        # Process and validate data
+        self.processed_data = self._process_data(combined_df)
         
-        # Process the data
-        self._process_data()
-        
-        return self.processed_data
-    
-    def _validate_data(self) -> None:
-        """
-        Perform basic data validation checks
-        """
-        # Check for missing values
-        if self.raw_data.isnull().any().any():
-            print("Warning: Dataset contains missing values")
-            self.raw_data.fillna(method='ffill', inplace=True)
-        
-        # Validate OHLC relationships
-        invalid_rows = (
-            (self.raw_data['high'] < self.raw_data['low']) |
-            (self.raw_data['high'] < self.raw_data['open']) |
-            (self.raw_data['high'] < self.raw_data['close']) |
-            (self.raw_data['low'] > self.raw_data['open']) |
-            (self.raw_data['low'] > self.raw_data['close'])
-        )
-        
-        if invalid_rows.any():
-            print(f"Warning: Found {invalid_rows.sum()} rows with invalid OHLC relationships")
-        
-        # Check for negative volumes
-        if (self.raw_data['volume'] < 0).any():
-            print("Warning: Negative volumes found in data")
-    
-    def _process_data(self) -> None:
-        """
-        Process the raw data into the final format
-        """
-        self.processed_data = self.raw_data.copy()
-        
-        # Add helper columns
-        self.processed_data['date'] = self.processed_data.index.date
-        self.processed_data['time'] = self.processed_data.index.time
-        
-        # Create session markers
-        self._create_market_sessions()
-        
-        # Calculate daily values
-        self._calculate_daily_stats()
-        
-        # Drop rows with NaN prev_close
-        self.processed_data.dropna(subset=['prev_close'], inplace=True)
-        
-        # Update session data after dropping NaN values
-        self._create_market_sessions()
-    
-    def _create_market_sessions(self) -> None:
-        """
-        Create market session markers for Asian, London, and US sessions
-        """
-        for session_name, (session_start, session_end) in self.SESSIONS.items():
-            # Create session mask
-            if session_start < session_end:
-                session_mask = (self.processed_data['time'] >= session_start) & \
-                             (self.processed_data['time'] < session_end)
-            else:  # Handle sessions that cross midnight
-                session_mask = (self.processed_data['time'] >= session_start) | \
-                             (self.processed_data['time'] < session_end)
-            
-            # Add session column
-            self.processed_data[f'{session_name}_session'] = session_mask
-            
-            # Create session-specific DataFrame
-            self.session_data[session_name] = self.processed_data[session_mask].copy()
-    
-    def _calculate_daily_stats(self) -> None:
-        """
-        Calculate daily statistics including previous day's close
-        """
-        # Calculate daily OHLCV
-        daily_data = self.processed_data.groupby('date').agg({
-            'open': 'first',
-            'high': 'max',
-            'low': 'min',
-            'close': 'last',
-            'volume': 'sum'
-        })
-        
-        # Calculate previous day's close
-        daily_data['prev_close'] = daily_data['close'].shift(1)
-        
-        # Merge back to processed data
-        self.processed_data = self.processed_data.join(
-            daily_data[['prev_close']], 
-            on='date'
-        )
-    
-    def get_session_data(self, session_name: str) -> pd.DataFrame:
-        """
-        Get data for a specific market session
-        
-        Parameters:
-        -----------
-        session_name : str
-            Name of the session ('asian', 'london', or 'us')
-            
-        Returns:
-        --------
-        pd.DataFrame
-            Data for the specified session
-        """
-        if session_name not in self.SESSIONS:
-            raise ValueError(f"Invalid session name. Must be one of {list(self.SESSIONS.keys())}")
-        
-        return self.session_data[session_name]
-    
-    def save_processed_data(self, output_path: Union[str, Path]) -> None:
-        """
-        Save processed data to CSV
-        
-        Parameters:
-        -----------
-        output_path : str or Path
-            Path where to save the processed CSV file
-        """
-        if self.processed_data is None:
-            raise ValueError("No processed data available. Run load_data first.")
-        
+        # Save processed data
+        output_path = processed_dir / "combined_data.csv"
         self.processed_data.to_csv(output_path)
-    def get_timestamp_range(self) -> tuple:
-        """
-        Get the date range of the data
+        logger.info(f"Saved processed data to {output_path}")
         
-        Returns:
-        --------
-        tuple
-            Start and end timestamps of the data
-        """
-        if self.processed_data is None:
-            raise ValueError("No processed data available")
-        
-        return (
-            self.processed_data.index.min(),
-            self.processed_data.index.max()
-        )
+        # Print basic statistics
+        start_date = self.processed_data.index.min().strftime('%Y-%m-%d')
+        end_date = self.processed_data.index.max().strftime('%Y-%m-%d')
+        logger.info(f"Data range: {start_date} to {end_date}")
+        logger.info(f"Total records: {len(self.processed_data)}")
     
-    def get_data_quality_metrics(self) -> dict:
-        """
-        Get data quality metrics
+    def _process_data(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Process and validate data with basic session marking"""
+        # Make a copy to avoid modifying the original
+        processed = df.copy()
         
-        Returns:
-        --------
-        dict
-            Dictionary containing various data quality metrics
-        """
-        if self.processed_data is None:
-            raise ValueError("No processed data available")
+        # Add date and time columns
+        processed['date'] = processed.index.date
+        processed['time'] = processed.index.time
         
-        metrics = {
-            'total_rows': len(self.processed_data),
-            'missing_values': self.processed_data.isnull().sum().to_dict(),
-            'unique_dates': self.processed_data['date'].nunique(),
-            'avg_daily_volume': self.processed_data.groupby('date')['volume'].sum().mean(),
-            'session_distribution': {
-                session: self.session_data[session].shape[0] 
-                for session in self.SESSIONS.keys()
-            }
-        }
+        # Add session markers
+        for session_name, (start, end) in self.SESSIONS.items():
+            if start < end:  # Normal session
+                session_mask = (processed['time'] >= start) & (processed['time'] < end)
+            else:  # Session crosses midnight
+                session_mask = (processed['time'] >= start) | (processed['time'] < end)
+            
+            processed[f'{session_name}_session'] = session_mask
         
-        return metrics
+        return processed
+
+def process_selected_assets(assets_to_process: List[str]) -> None:
+    """Process only selected assets"""
+    handler = DataHandler()
+    
+    for asset_name in assets_to_process:
+        try:
+            asset = Asset[asset_name]
+            handler.process_asset_data(asset)
+        except KeyError:
+            logger.error(f"Invalid asset name: {asset_name}")
+        except Exception as e:
+            logger.error(f"Error processing {asset_name}: {str(e)}", exc_info=True)
+
+if __name__ == "__main__":
+    # Process only SPY data
+    process_selected_assets(["SPY"])
+    
+    # For all assets:
+    # process_selected_assets([asset.name for asset in Asset])
