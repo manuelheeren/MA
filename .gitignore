@@ -1,4 +1,6 @@
 # Data and results
+datasets/raw/
+datasets/results/
 *.csv
 *.png
 *.jpg
