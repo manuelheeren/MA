@@ -12,7 +12,6 @@ The strategy trades based on price momentum relative to the previous day's close
 - `strategy.py`: Trading strategy implementation
 - `backtest.py`: Core backtesting engine
 - `market_analysis.py`: Market regime classification and analysis
-- `util_volume_analysis.py`: Volume analysis utilities
 
 ## Installation
 
@@ -31,7 +30,7 @@ venv\Scripts\activate     # Windows
 
 3. Install dependencies:
 ```bash
-pip install pandas numpy matplotlib seaborn
+pip install pandas numpy
 ```
 
 ## Data Format
@@ -45,6 +44,7 @@ Expected data structure (CSV):
 
 Run backtest:
 ```bash
+# In backtest.py line 302 and 303 the test parameters (asset to test and fees) can be defined
 python backtest.py
 ```
 
@@ -53,18 +53,8 @@ Analyze market regimes:
 python market_analysis.py
 ```
 
-Analyze volume patterns:
-```bash
-python util_volume_analysis.py
-```
-
 ## Output
 
 - Trading performance metrics
 - Session analysis
 - Market regime classification
-- Performance visualizations
-
-## License
-
-TBD
