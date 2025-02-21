@@ -162,7 +162,7 @@ def analyze_assets(assets: List[str] = None, sample_days: int = 30) -> None:
     
     for asset_name in assets:
         try:
-            data_path = Path(f"datasets/processed/{asset_name}/combined_data.csv")
+            data_path = Path(f"data/processed/{asset_name}/combined_data.csv")
             if not data_path.exists():
                 logger.warning(f"No processed data found for {asset_name}, skipping...")
                 continue

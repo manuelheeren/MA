@@ -39,7 +39,7 @@ class Backtest:
         """
         self.strategy = strategy
         self.trades_df = strategy.get_trade_data()
-        self.output_dir = output_dir or Path("datasets/results")
+        self.output_dir = output_dir or Path("data/results")
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.results = {}
         self.fee = fee
@@ -303,13 +303,13 @@ def main():
     fees = [0.0, 0.005, 0.01]  # 0%, 0.5%, 1%
     
     # Create output directory
-    output_dir = Path("datasets/results")
+    output_dir = Path("data/results")
     output_dir.mkdir(parents=True, exist_ok=True)
     
     for asset_name in assets:
         try:
             # Load data
-            data_path = Path(f"datasets/processed/{asset_name}/combined_data.csv")
+            data_path = Path(f"data/processed/{asset_name}/combined_data.csv")
             if not data_path.exists():
                 logger.warning(f"Data file not found for {asset_name}, skipping...")
                 continue

@@ -39,7 +39,7 @@ pip install pandas numpy matplotlib seaborn
 Expected data structure (CSV):
 - Minute-level OHLCV data
 - Columns: timestamp, open, high, low, close, volume
-- Example path: `datasets/raw/XAUUSD/Nov23-Nov24/XAUUSD_1M_BID.csv`
+- Example path: `data/raw/XAUUSD/Nov23-Nov24/XAUUSD_1M_BID.csv`
 
 ## Usage
 
