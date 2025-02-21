@@ -31,12 +31,31 @@ class Asset(Enum):
     SPY = {
         "name": "SPY",
         "files": [
+            "datasets/raw/SPY/Jan22-Jun22/SPY.USUSD_Candlestick_1_M_BID_01.01.2020-30.06.2020.csv",
+            "datasets/raw/SPY/Jul22-Dec22/SPY.USUSD_Candlestick_1_M_BID_01.07.2020-31.12.2020.csv",
+            "datasets/raw/SPY/Jan23-Jun23/SPY.USUSD_Candlestick_1_M_BID_01.01.2021-30.06.2021.csv",
+            "datasets/raw/SPY/Jul23-Dec23/SPY.USUSD_Candlestick_1_M_BID_01.07.2021-31.12.2021.csv",
             "datasets/raw/SPY/Jan22-Jun22/SPY.USUSD_Candlestick_1_M_BID_01.01.2022-30.06.2022.csv",
             "datasets/raw/SPY/Jul22-Dec22/SPY.USUSD_Candlestick_1_M_BID_01.07.2022-31.12.2022.csv",
             "datasets/raw/SPY/Jan23-Jun23/SPY.USUSD_Candlestick_1_M_BID_01.01.2023-30.06.2023.csv",
             "datasets/raw/SPY/Jul23-Dec23/SPY.USUSD_Candlestick_1_M_BID_01.07.2023-31.12.2023.csv",
             "datasets/raw/SPY/Jan24-Jun24/SPY.USUSD_Candlestick_1_M_BID_01.01.2024-30.06.2024.csv",
             "datasets/raw/SPY/Jul24-Nov24/SPY.USUSD_Candlestick_1_M_BID_01.07.2024-30.11.2024.csv"
+        ]
+    }
+    WTI = {
+        "name": "WTI",
+        "files": [
+            "datasets/raw/WTI/LIGHT.CMDUSD_Candlestick_1_M_BID_01.01.2020-30.06.2020.csv",
+            "datasets/raw/WTI/LIGHT.CMDUSD_Candlestick_1_M_BID_01.07.2020-31.12.2020.csv",
+            "datasets/raw/WTI/LIGHT.CMDUSD_Candlestick_1_M_BID_01.01.2021-30.06.2021.csv",
+            "datasets/raw/WTI/LIGHT.CMDUSD_Candlestick_1_M_BID_01.07.2021-31.12.2021.csv",
+            "datasets/raw/WTI/LIGHT.CMDUSD_Candlestick_1_M_BID_01.01.2022-30.06.2022.csv",
+            "datasets/raw/WTI/LIGHT.CMDUSD_Candlestick_1_M_BID_01.07.2022-31.12.2022.csv",
+            "datasets/raw/WTI/LIGHT.CMDUSD_Candlestick_1_M_BID_01.01.2023-30.06.2023.csv",
+            "datasets/raw/WTI/LIGHT.CMDUSD_Candlestick_1_M_BID_01.07.2023-31.12.2023.csv",
+            "datasets/raw/WTI/LIGHT.CMDUSD_Candlestick_1_M_BID_01.01.2024-30.06.2024.csv",
+            "datasets/raw/WTI/LIGHT.CMDUSD_Candlestick_1_M_BID_01.07.2024-01.11.2024.csv"
         ]
     }
 
@@ -158,7 +177,7 @@ def process_selected_assets(assets_to_process: List[str]) -> None:
 
 if __name__ == "__main__":
     # Process only SPY data
-    process_selected_assets(["SPY"])
+    process_selected_assets(["WTI"])
     
     # For all assets:
     # process_selected_assets([asset.name for asset in Asset])
