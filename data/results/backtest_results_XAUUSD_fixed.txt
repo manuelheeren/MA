@@ -1,5 +1,5 @@
 === XAUUSD Backtest Results ===
-Bet Sizing Strategy: fixedfractionalbetsizing
+Bet Sizing Strategy: fixed
 
 Period: 2020-01-02 to 2024-11-22
 

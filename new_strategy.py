@@ -112,10 +112,11 @@ class TradingStrategy:
     MAX_ATTEMPTS = 3
     INITIAL_CAPITAL = 100000
 
-    def __init__(self, data: pd.DataFrame, asset: str, bet_sizing: BetSizingStrategy):
+    def __init__(self, data: pd.DataFrame, asset: str, bet_sizing: BetSizingStrategy, bet_sizing_method: BetSizingMethod):
         self.data = data
         self.asset = Asset(asset)
         self.bet_sizing = bet_sizing
+        self.bet_sizing_method = bet_sizing_method
         self.session_capital = {s.name: self.INITIAL_CAPITAL for s in self.SESSIONS}
         self.trades = {s.name: [] for s in self.SESSIONS}
         logger.info(f"Strategy initialized for {self.asset.value} using {type(bet_sizing).__name__}")
@@ -271,3 +272,12 @@ class TradingStrategy:
                 'duration_minutes': (t.exit_time - t.entry_time).total_seconds() / 60 if t.exit_time else None
             } for t in session_trades])
         return pd.DataFrame(all_trades)
+
+    # Factory function for bet sizing strategy
+def get_bet_sizing(method: BetSizingMethod, past_returns: pd.Series = None):
+    if method == BetSizingMethod.KELLY:
+        return KellyBetSizing(past_returns)
+    elif method == BetSizingMethod.FIXED:
+        return FixedFractionalBetSizing(risk_fraction=0.01)
+    else:
+        raise ValueError(f"Unsupported bet sizing method: {method}")
