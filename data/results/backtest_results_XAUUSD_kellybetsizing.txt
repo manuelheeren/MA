@@ -1,0 +1,106 @@
+=== XAUUSD Backtest Results ===
+Bet Sizing Strategy: kellybetsizing
+
+Period: 2020-01-02 to 2024-11-22
+
+
+ASIAN Session Performance:
+Initial Capital: $100,000.00
+Final Capital: $100,000.00
+Total PnL: $0.00
+Return: 0.00%
+Win Rate: 0.00% (0W/1533L)
+Max Drawdown: 0.00%
+Skewness: 0.000
+Excess Kurtosis: -3.000
+
+Attempt Analysis:
+
+  Attempt 1:
+  Trades: 1277 (83.3% of session trades)
+  PnL: $0.00
+  Win Rate: 0.00% (0W/1277L)
+  Average Win: $0.00
+  Average Loss: $0.00
+
+  Attempt 2:
+  Trades: 217 (14.2% of session trades)
+  PnL: $0.00
+  Win Rate: 0.00% (0W/217L)
+  Average Win: $0.00
+  Average Loss: $0.00
+
+  Attempt 3:
+  Trades: 39 (2.5% of session trades)
+  PnL: $0.00
+  Win Rate: 0.00% (0W/39L)
+  Average Win: $0.00
+  Average Loss: $0.00
+
+LONDON Session Performance:
+Initial Capital: $100,000.00
+Final Capital: $100,000.00
+Total PnL: $0.00
+Return: 0.00%
+Win Rate: 0.00% (0W/1860L)
+Max Drawdown: 0.00%
+Skewness: 0.000
+Excess Kurtosis: -3.000
+
+Attempt Analysis:
+
+  Attempt 1:
+  Trades: 1277 (68.7% of session trades)
+  PnL: $0.00
+  Win Rate: 0.00% (0W/1277L)
+  Average Win: $0.00
+  Average Loss: $0.00
+
+  Attempt 2:
+  Trades: 450 (24.2% of session trades)
+  PnL: $0.00
+  Win Rate: 0.00% (0W/450L)
+  Average Win: $0.00
+  Average Loss: $0.00
+
+  Attempt 3:
+  Trades: 133 (7.2% of session trades)
+  PnL: $0.00
+  Win Rate: 0.00% (0W/133L)
+  Average Win: $0.00
+  Average Loss: $0.00
+
+US Session Performance:
+Initial Capital: $100,000.00
+Final Capital: $100,000.00
+Total PnL: $0.00
+Return: 0.00%
+Win Rate: 0.00% (0W/1828L)
+Max Drawdown: 0.00%
+Skewness: 0.000
+Excess Kurtosis: -3.000
+
+Attempt Analysis:
+
+  Attempt 1:
+  Trades: 1277 (69.9% of session trades)
+  PnL: $0.00
+  Win Rate: 0.00% (0W/1277L)
+  Average Win: $0.00
+  Average Loss: $0.00
+
+  Attempt 2:
+  Trades: 414 (22.6% of session trades)
+  PnL: $0.00
+  Win Rate: 0.00% (0W/414L)
+  Average Win: $0.00
+  Average Loss: $0.00
+
+  Attempt 3:
+  Trades: 137 (7.5% of session trades)
+  PnL: $0.00
+  Win Rate: 0.00% (0W/137L)
+  Average Win: $0.00
+  Average Loss: $0.00
+
+==================================================

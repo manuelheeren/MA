@@ -18,6 +18,10 @@ class Asset(Enum):
     SPYUSD = "SPYUSD"
     WTI = "WTI"
 
+class BetSizingMethod(Enum):
+    KELLY = "kelly"
+    FIXED = "fixed"
+
 @dataclass(frozen=True)
 class SessionTime:
     """Session time configuration"""
