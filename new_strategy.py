@@ -1,18 +1,19 @@
-#Imports
+# new_strategy.py
+
 from dataclasses import dataclass
-from typing import List, Optional, Dict, Protocol
+from typing import List, Optional, Dict
 import pandas as pd
 import numpy as np
 from datetime import time
 import logging
 from enum import Enum
+from bet_sizing import KellyBetSizing, FixedFractionalBetSizing, BetSizingStrategy, FixedBetSize
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 class Asset(Enum):
-    """Trading assets"""
     XAUUSD = "XAUUSD"
     BTCUSD = "BTCUSD"
     SPYUSD = "SPYUSD"
@@ -21,10 +22,10 @@ class Asset(Enum):
 class BetSizingMethod(Enum):
     KELLY = "kelly"
     FIXED = "fixed"
+    FIXED_AMOUNT = "fixed_amount"
 
 @dataclass(frozen=True)
 class SessionTime:
-    """Session time configuration"""
     name: str
     start: time
     end: time
@@ -32,7 +33,6 @@ class SessionTime:
 
 @dataclass
 class TradeSetup:
-    """Trade setup configuration"""
     direction: str
     entry_price: float
     stop_loss: float
@@ -45,7 +45,6 @@ class TradeSetup:
 
 @dataclass
 class Trade:
-    """Trade execution and tracking"""
     entry_time: pd.Timestamp
     setup: TradeSetup
     session: str
@@ -62,47 +61,8 @@ class Trade:
     def return_pct(self) -> Optional[float]:
         return (self.pnl / self.setup.risk_amount * 0.01) if self.pnl is not None else None
 
-#Bet Sizing Strategies
-class BetSizingStrategy(Protocol):
-    def compute_position(self, capital: float, price: float, stop_loss: float) -> tuple:
-        ...
-#Kelly
-class KellyBetSizing:
-    def __init__(self, returns: pd.Series):
-        self.kelly_fraction = self._compute_kelly_from_returns(returns)
-
-    def _compute_kelly_from_returns(self, returns: pd.Series) -> float:
-        positive_returns = returns[returns > 0]
-        negative_returns = returns[returns < 0]
-        p = len(positive_returns) / len(returns)
-        if len(positive_returns) == 0 or len(negative_returns) == 0:
-            return 0.0
-        win_avg = positive_returns.mean()
-        loss_avg = abs(negative_returns.mean())
-        win_loss_ratio = win_avg / loss_avg
-        kelly_fraction = p - ((1 - p) / win_loss_ratio)
-        return max(0, min(kelly_fraction, 1))
-
-    def compute_position(self, capital: float, price: float, stop_loss: float) -> tuple:
-        risk = abs(price - stop_loss)
-        risk_amount = capital * self.kelly_fraction
-        position_size = risk_amount / risk if risk != 0 else 0
-        return position_size, risk_amount
-
-#Fixed Fractional
-class FixedFractionalBetSizing:
-    def __init__(self, risk_fraction: float = 0.01):
-        self.risk_fraction = risk_fraction
-
-    def compute_position(self, capital: float, price: float, stop_loss: float) -> tuple:
-        risk = abs(price - stop_loss)
-        risk_amount = capital * self.risk_fraction
-        position_size = risk_amount / risk if risk != 0 else 0
-        return position_size, risk_amount
-
-#Trading Strategy
 class TradingStrategy:
-    
+
     SESSIONS = [
         SessionTime('asian', time(0, 0), time(8, 0), time(7, 59)),
         SessionTime('london', time(8, 0), time(16, 0), time(15, 59)),
@@ -132,8 +92,7 @@ class TradingStrategy:
             take_profit = price * (1 - tp_pct)
         return stop_loss, take_profit
 
-    def _create_trade_setup(self, price: float, direction: str, attempt: int, 
-                            ref_close: float, session: str) -> TradeSetup:
+    def _create_trade_setup(self, price: float, direction: str, attempt: int, ref_close: float, session: str) -> TradeSetup:
         stop_loss, take_profit = self._calculate_trade_levels(price, direction, attempt)
         current_capital = self.session_capital[session]
         position_size, risk_amount = self.bet_sizing.compute_position(current_capital, price, stop_loss)
@@ -273,11 +232,12 @@ class TradingStrategy:
             } for t in session_trades])
         return pd.DataFrame(all_trades)
 
-    # Factory function for bet sizing strategy
-def get_bet_sizing(method: BetSizingMethod, past_returns: pd.Series = None):
+def get_bet_sizing(method: BetSizingMethod, past_returns: pd.Series = None) -> BetSizingStrategy:
     if method == BetSizingMethod.KELLY:
         return KellyBetSizing(past_returns)
     elif method == BetSizingMethod.FIXED:
         return FixedFractionalBetSizing(risk_fraction=0.01)
+    elif method == BetSizingMethod.FIXED_AMOUNT:
+        return FixedBetSize(fixed_risk=1000)
     else:
         raise ValueError(f"Unsupported bet sizing method: {method}")
