@@ -143,14 +143,13 @@ class DataHandler:
         logger.info(f"Total records: {len(self.processed_data)}")
     
     def _process_data(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Process and validate data with basic session marking"""
-        # Make a copy to avoid modifying the original
+        """Process and validate data with basic session marking and daily OHLC"""
         processed = df.copy()
         
         # Add date and time columns
         processed['date'] = processed.index.date
         processed['time'] = processed.index.time
-        
+
         # Add session markers
         for session_name, (start, end) in self.SESSIONS.items():
             if start < end:  # Normal session
@@ -159,8 +158,21 @@ class DataHandler:
                 session_mask = (processed['time'] >= start) | (processed['time'] < end)
             
             processed[f'{session_name}_session'] = session_mask
-        
+
+        # Add daily OHLC columns
+        daily_ohlc = processed.resample('1D').agg({
+            'high': 'max',
+            'low': 'min',
+            'close': 'last'
+        })
+
+        # Forward-fill daily values into minute-level data
+        processed['daily_high'] = daily_ohlc['high'].reindex(processed.index, method='ffill')
+        processed['daily_low'] = daily_ohlc['low'].reindex(processed.index, method='ffill')
+        processed['daily_close'] = daily_ohlc['close'].reindex(processed.index, method='ffill')
+
         return processed
+
 
 def process_selected_assets(assets_to_process: List[str]) -> None:
     """Process only selected assets"""
@@ -177,7 +189,7 @@ def process_selected_assets(assets_to_process: List[str]) -> None:
 
 if __name__ == "__main__":
     # Process only SPY data
-    process_selected_assets(["WTI"])
+    process_selected_assets(["XAUUSD"])
     
     # For all assets:
     # process_selected_assets([asset.name for asset in Asset])
