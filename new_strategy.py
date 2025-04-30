@@ -52,6 +52,7 @@ class Trade:
     exit_price: Optional[float] = None
     status: str = 'open'
     pnl: Optional[float] = None
+    equity_at_entry: Optional[float] = None
 
     @property
     def holding_time(self) -> Optional[pd.Timedelta]:
@@ -59,7 +60,14 @@ class Trade:
 
     @property
     def return_pct(self) -> Optional[float]:
-        return (self.pnl / self.setup.risk_amount * 0.01) if self.pnl is not None else None
+         if (
+                self.pnl is not None
+                and self.setup.risk_amount
+                and np.isfinite(self.setup.risk_amount)
+                and self.setup.risk_amount != 0
+        ):
+                return (self.pnl / self.setup.risk_amount) * 0.01
+         return None
 
 class TradingStrategy:
 
@@ -94,7 +102,8 @@ class TradingStrategy:
 
     def _create_trade_setup(self, price: float, direction: str, attempt: int, ref_close: float, session: str) -> TradeSetup:
         stop_loss, take_profit = self._calculate_trade_levels(price, direction, attempt)
-        current_capital = self.session_capital[session]
+        current_capital = self._get_session_equity(session, price) # Equity
+        #current_capital = self.session_capital[session] #Cash
         position_size, risk_amount = self.bet_sizing.compute_position(current_capital, price, stop_loss)
         return TradeSetup(
             direction=direction,
@@ -145,7 +154,8 @@ class TradingStrategy:
                 ref_close=signal['ref_close'],
                 session=session_name
             )
-            trade = Trade(entry_time, setup, session_name)
+            equity_at_entry = self._get_session_equity(session_name, self.data.loc[entry_time, 'close'])
+            trade = Trade(entry_time, setup, session_name, equity_at_entry=equity_at_entry)
             remaining_trades = []
             self._process_single_trade(trade, self._get_session_prices(entry_time, session_end), session_end, remaining_trades)
             processed_trades.append(trade)
@@ -206,6 +216,8 @@ class TradingStrategy:
         gross_pnl = price_diff * trade.setup.position_size
         trade.pnl = gross_pnl
         self.session_capital[trade.session] += trade.pnl
+        if hasattr(self.bet_sizing, "update_with_trade_result"):
+            self.bet_sizing.update_with_trade_result(trade.pnl, trade.setup.risk_amount)
 
     def get_trade_data(self) -> pd.DataFrame:
         all_trades = []
@@ -228,16 +240,35 @@ class TradingStrategy:
                 'ref_close': t.setup.ref_close,
                 'date': t.entry_time.date(),
                 'day_of_week': t.entry_time.day_name(),
+                'equity_at_entry': t.equity_at_entry,
                 'duration_minutes': (t.exit_time - t.entry_time).total_seconds() / 60 if t.exit_time else None
             } for t in session_trades])
         return pd.DataFrame(all_trades)
 
+    def _get_session_equity(self, session: str, current_price: float) -> float:
+    #"""Calculate total equity (cash + unrealized PnL) for a session"""
+        cash = self.session_capital[session]
+        unrealized_pnl = 0.0
+
+        for trade in self.trades[session]:
+            if trade.status != 'open':
+                continue
+
+            direction = 1 if trade.setup.direction == 'long' else -1
+            entry = trade.setup.entry_price
+            size = trade.setup.position_size
+            unrealized_pnl += (current_price - entry) * size * direction
+
+        return cash + unrealized_pnl
+
+
 def get_bet_sizing(method: BetSizingMethod, past_returns: pd.Series = None) -> BetSizingStrategy:
     if method == BetSizingMethod.KELLY:
-        return KellyBetSizing(past_returns)
+        return KellyBetSizing()
     elif method == BetSizingMethod.FIXED:
-        return FixedFractionalBetSizing(risk_fraction=0.01)
+        return FixedFractionalBetSizing(investment_fraction=0.2)
     elif method == BetSizingMethod.FIXED_AMOUNT:
-        return FixedBetSize(fixed_risk=1000)
+        return FixedBetSize(fixed_trade_size=2000)
     else:
         raise ValueError(f"Unsupported bet sizing method: {method}")
+

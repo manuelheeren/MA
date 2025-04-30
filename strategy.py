@@ -269,6 +269,9 @@ class TradingStrategy:
         
         # Update session capital
         self.session_capital[trade.session] += trade.pnl
+        #to fill kelly with trade results
+        if hasattr(self.bet_sizing, "update_with_trade_result"):
+         self.bet_sizing.update_with_trade_result(trade.pnl, trade.setup.risk_amount)
 
     def get_trade_data(self) -> pd.DataFrame:
         """Convert trades to DataFrame for analysis"""

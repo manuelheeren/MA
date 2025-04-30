@@ -1,0 +1,107 @@
+=== XAUUSD Backtest Results ===
+Bet Sizing Strategy: kelly
+
+Period: 2020-01-02 to 2024-11-22
+
+
+ASIAN Session Performance:
+Initial Capital: $100,000.00
+Final Capital: $72,191.55
+Total PnL: $-27,808.45
+Return: -27.81%
+Win Rate: 0.91% (14W/1519L)
+Max Drawdown: 3.38%
+Sharpe Ratio: 0.49
+Skewness: 0.345
+Excess Kurtosis: 136.740
+
+Attempt Analysis:
+
+  Attempt 1:
+  Trades: 1277 (83.3% of session trades)
+  PnL: $-19,686.98
+  Win Rate: 1.02% (13W/1264L)
+  Average Win: $2,481.77
+  Average Loss: $-5,195.00
+
+  Attempt 2:
+  Trades: 217 (14.2% of session trades)
+  PnL: $-8,121.47
+  Win Rate: 0.46% (1W/216L)
+  Average Win: $80.32
+  Average Loss: $-8,201.80
+
+  Attempt 3:
+  Trades: 39 (2.5% of session trades)
+  PnL: $0.00
+  Win Rate: 0.00% (0W/39L)
+  Average Win: $0.00
+  Average Loss: $0.00
+
+LONDON Session Performance:
+Initial Capital: $100,000.00
+Final Capital: $100,000.00
+Total PnL: $0.00
+Return: 0.00%
+Win Rate: 0.00% (0W/1860L)
+Max Drawdown: 0.00%
+Skewness: 0.000
+Excess Kurtosis: -3.000
+
+Attempt Analysis:
+
+  Attempt 1:
+  Trades: 1277 (68.7% of session trades)
+  PnL: $0.00
+  Win Rate: 0.00% (0W/1277L)
+  Average Win: $0.00
+  Average Loss: $0.00
+
+  Attempt 2:
+  Trades: 450 (24.2% of session trades)
+  PnL: $0.00
+  Win Rate: 0.00% (0W/450L)
+  Average Win: $0.00
+  Average Loss: $0.00
+
+  Attempt 3:
+  Trades: 133 (7.2% of session trades)
+  PnL: $0.00
+  Win Rate: 0.00% (0W/133L)
+  Average Win: $0.00
+  Average Loss: $0.00
+
+US Session Performance:
+Initial Capital: $100,000.00
+Final Capital: $100,000.00
+Total PnL: $0.00
+Return: 0.00%
+Win Rate: 0.00% (0W/1828L)
+Max Drawdown: 0.00%
+Skewness: 0.000
+Excess Kurtosis: -3.000
+
+Attempt Analysis:
+
+  Attempt 1:
+  Trades: 1277 (69.9% of session trades)
+  PnL: $0.00
+  Win Rate: 0.00% (0W/1277L)
+  Average Win: $0.00
+  Average Loss: $0.00
+
+  Attempt 2:
+  Trades: 414 (22.6% of session trades)
+  PnL: $0.00
+  Win Rate: 0.00% (0W/414L)
+  Average Win: $0.00
+  Average Loss: $0.00
+
+  Attempt 3:
+  Trades: 137 (7.5% of session trades)
+  PnL: $0.00
+  Win Rate: 0.00% (0W/137L)
+  Average Win: $0.00
+  Average Loss: $0.00
+
+==================================================
