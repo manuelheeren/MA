@@ -7,7 +7,7 @@ import numpy as np
 from datetime import time
 import logging
 from enum import Enum
-from bet_sizing import KellyBetSizing, FixedFractionalBetSizing, BetSizingStrategy, FixedBetSize
+from bet_sizing import KellyBetSizing, FixedFractionalBetSizing, BetSizingStrategy, FixedBetSize, PercentVolatilityBetSizing
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -23,6 +23,7 @@ class BetSizingMethod(Enum):
     KELLY = "kelly"
     FIXED = "fixed"
     FIXED_AMOUNT = "fixed_amount"
+    PERCENT_VOLATILITY = "percent_volatility"
 
 @dataclass(frozen=True)
 class SessionTime:
@@ -100,11 +101,16 @@ class TradingStrategy:
             take_profit = price * (1 - tp_pct)
         return stop_loss, take_profit
 
-    def _create_trade_setup(self, price: float, direction: str, attempt: int, ref_close: float, session: str) -> TradeSetup:
+    def _create_trade_setup(self, entry_time: pd.Timestamp, price: float, direction: str, attempt: int, ref_close: float, session: str) -> TradeSetup:
         stop_loss, take_profit = self._calculate_trade_levels(price, direction, attempt)
-        current_capital = self._get_session_equity(session, price) # Equity
+        current_equity = self._get_session_equity(session, price) # Equity
         #current_capital = self.session_capital[session] #Cash
-        position_size, risk_amount = self.bet_sizing.compute_position(current_capital, price, stop_loss)
+        # === NEW: Lookup ATR value from the DataFrame ===
+        atr_value = self.data.loc[entry_time, 'atr_14'] if entry_time in self.data.index else None
+        context = {'atr_14': atr_value}
+        position_size, risk_amount = self.bet_sizing.compute_position(current_equity, price, stop_loss, context=context)
+
+
         return TradeSetup(
             direction=direction,
             entry_price=price,
@@ -147,13 +153,16 @@ class TradingStrategy:
             entry_time = signal['entry_time']
             session = next(s for s in self.SESSIONS if s.name == session_name)
             session_end = pd.Timestamp(f"{entry_time.date()} {session.end}", tz='UTC')
+            price = self.data.loc[entry_time, 'close']
             setup = self._create_trade_setup(
-                price=self.data.loc[entry_time, 'close'],
+                entry_time=entry_time,
+                price=price,
                 direction=signal['direction'],
                 attempt=1,
                 ref_close=signal['ref_close'],
                 session=session_name
             )
+
             equity_at_entry = self._get_session_equity(session_name, self.data.loc[entry_time, 'close'])
             trade = Trade(entry_time, setup, session_name, equity_at_entry=equity_at_entry)
             remaining_trades = []
@@ -173,12 +182,16 @@ class TradingStrategy:
             if self._check_stop_loss(trade, price_data):
                 self._close_trade(trade, timestamp, trade.setup.stop_loss, 'sl_hit')
                 if trade.setup.attempt < self.MAX_ATTEMPTS and timestamp < session_end:
+                    new_price = trade.setup.stop_loss
+                    new_entry_time = timestamp
+
                     new_setup = self._create_trade_setup(
-                        trade.setup.stop_loss,
-                        trade.setup.direction,
-                        trade.setup.attempt + 1,
-                        trade.setup.ref_close,
-                        trade.session
+                        entry_time=new_entry_time,
+                        price=new_price,
+                        direction=trade.setup.direction,
+                        attempt=trade.setup.attempt + 1,
+                        ref_close=trade.setup.ref_close,
+                        session=trade.session
                     )
                     trades_to_process.append(Trade(timestamp, new_setup, trade.session))
                 return True
@@ -269,6 +282,8 @@ def get_bet_sizing(method: BetSizingMethod, past_returns: pd.Series = None) -> B
         return FixedFractionalBetSizing(investment_fraction=0.2)
     elif method == BetSizingMethod.FIXED_AMOUNT:
         return FixedBetSize(fixed_trade_size=2000)
+    elif method == BetSizingMethod.PERCENT_VOLATILITY:
+        return PercentVolatilityBetSizing(risk_fraction=0.01)
     else:
         raise ValueError(f"Unsupported bet sizing method: {method}")
 

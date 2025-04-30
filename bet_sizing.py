@@ -1,4 +1,4 @@
-from typing import Protocol
+from typing import Protocol, Dict
 import pandas as pd
 
 class BetSizingStrategy(Protocol):
@@ -73,8 +73,8 @@ class FixedFractionalBetSizing:
     def __init__(self, investment_fraction: float = 0.01):
         self.investment_fraction = investment_fraction  # e.g., 0.01 for 1% of equity
 
-    def compute_position(self, equity: float, price: float, stop_loss: float) -> tuple:
-        amount_to_invest = equity * self.investment_fraction
+    def compute_position(self, capital: float, price: float, stop_loss: float, context: dict = None) -> tuple:
+        amount_to_invest = capital * self.investment_fraction
         position_size = amount_to_invest / price if price != 0 else 0
         return position_size, amount_to_invest
 
@@ -90,4 +90,19 @@ class FixedBetSize:
         position_size = self.fixed_trade_size / price if price != 0 else 0
         return position_size, self.fixed_trade_size
 
+class PercentVolatilityBetSizing:
+    def __init__(self, risk_fraction: float = 0.01, atr_column: str = 'atr_14'):
+        self.risk_fraction = risk_fraction
+        self.atr_column = atr_column
 
+    def compute_position(self, equity: float, price: float, stop_loss: float, context: Dict = None) -> tuple:
+        if context is None or self.atr_column not in context:
+            return 0, 0  # ATR not available
+
+        atr = context[self.atr_column]
+        if atr is None or not np.isfinite(atr) or atr == 0:
+            return 0, 0
+
+        risk_amount = equity * self.risk_fraction
+        position_size = risk_amount / atr
+        return position_size, risk_amount
