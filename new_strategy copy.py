@@ -1,3 +1,5 @@
+# new_strategy.py
+
 from dataclasses import dataclass
 from typing import List, Optional, Dict
 import pandas as pd
@@ -60,14 +62,14 @@ class Trade:
 
     @property
     def return_pct(self) -> Optional[float]:
-        if (
-            self.pnl is not None
-            and self.setup.risk_amount
-            and np.isfinite(self.setup.risk_amount)
-            and self.setup.risk_amount != 0
+         if (
+                self.pnl is not None
+                and self.setup.risk_amount
+                and np.isfinite(self.setup.risk_amount)
+                and self.setup.risk_amount != 0
         ):
-            return (self.pnl / self.setup.risk_amount) * 0.01
-        return None
+                return (self.pnl / self.setup.risk_amount) * 0.01
+         return None
 
 class TradingStrategy:
 
@@ -102,15 +104,16 @@ class TradingStrategy:
 
     def _create_trade_setup(self, entry_time: pd.Timestamp, price: float, direction: str, attempt: int, ref_close: float, session: str) -> TradeSetup:
         stop_loss, take_profit = self._calculate_trade_levels(price, direction, attempt)
-        current_equity = self._get_session_equity(session, price)
-
+        current_equity = self._get_session_equity(session, price) # Equity
+        #current_capital = self.session_capital[session] #Cash
+        # === NEW: Lookup ATR value from the DataFrame ===
         atr_value = self.data.loc[entry_time, 'atr_14'] if entry_time in self.data.index else None
         context = {'atr_14': atr_value}
-
+        
         if hasattr(self.bet_sizing, "requires_context") and self.bet_sizing.requires_context:
             position_size, risk_amount = self.bet_sizing.compute_position(
                 current_equity, price, stop_loss, context=context
-            )
+            )   
         else:
             position_size, risk_amount = self.bet_sizing.compute_position(
                 current_equity, price, stop_loss
@@ -145,49 +148,39 @@ class TradingStrategy:
                 self.trade_signals[session.name].append({
                     'entry_time': session_start,
                     'direction': direction,
-                    'ref_close': prev_close,
-                    'session_name': session.name  # ✅ Add session info
+                    'ref_close': prev_close
                 })
 
     def simulate_trades(self) -> None:
-        # ✅ New: Flatten all signals into a global list and sort by time
-        all_signals = []
         for session_name, signals in self.trade_signals.items():
-            for signal in signals:
-                all_signals.append(signal)
+            self._process_session_signals(session_name, signals)
 
-        all_signals.sort(key=lambda x: x['entry_time'])  # Global chronological order
+    def _process_session_signals(self, session_name: str, signals: List[dict]) -> None:
+        processed_trades = []
+        for signal in signals:
+            entry_time = signal['entry_time']
+            session = next(s for s in self.SESSIONS if s.name == session_name)
+            session_end = pd.Timestamp(f"{entry_time.date()} {session.end}", tz='UTC')
+            price = self.data.loc[entry_time, 'close']
+            setup = self._create_trade_setup(
+                entry_time=entry_time,
+                price=price,
+                direction=signal['direction'],
+                attempt=1,
+                ref_close=signal['ref_close'],
+                session=session_name
+            )
 
-        for signal in all_signals:
-            self._process_single_signal(signal)
-
-    def _process_single_signal(self, signal: dict) -> None:
-        entry_time = signal['entry_time']
-        session_name = signal['session_name']
-        session = next(s for s in self.SESSIONS if s.name == session_name)
-        session_end = pd.Timestamp(f"{entry_time.date()} {session.end}", tz='UTC')
-        price = self.data.loc[entry_time, 'close']
-
-        setup = self._create_trade_setup(
-            entry_time=entry_time,
-            price=price,
-            direction=signal['direction'],
-            attempt=1,
-            ref_close=signal['ref_close'],
-            session=session_name
-        )
-
-        equity_at_entry = self._get_session_equity(session_name, price)
-        trade = Trade(entry_time, setup, session_name, equity_at_entry=equity_at_entry)
-        remaining_trades = []
-
-        self._process_single_trade(trade, self._get_session_prices(entry_time, session_end), session_end, remaining_trades)
-        self.trades[session_name].append(trade)
-
-        while remaining_trades:
-            re_trade = remaining_trades.pop(0)
-            self._process_single_trade(re_trade, self._get_session_prices(re_trade.entry_time, session_end), session_end, remaining_trades)
-            self.trades[session_name].append(re_trade)
+            equity_at_entry = self._get_session_equity(session_name, self.data.loc[entry_time, 'close'])
+            trade = Trade(entry_time, setup, session_name, equity_at_entry=equity_at_entry)
+            remaining_trades = []
+            self._process_single_trade(trade, self._get_session_prices(entry_time, session_end), session_end, remaining_trades)
+            processed_trades.append(trade)
+            while remaining_trades:
+                re_trade = remaining_trades.pop(0)
+                self._process_single_trade(re_trade, self._get_session_prices(re_trade.entry_time, session_end), session_end, remaining_trades)
+                processed_trades.append(re_trade)
+        self.trades[session_name] = processed_trades
 
     def _process_single_trade(self, trade: Trade, prices: pd.DataFrame, session_end: pd.Timestamp, trades_to_process: List[Trade]) -> bool:
         for timestamp, price_data in prices.iterrows():
@@ -274,6 +267,7 @@ class TradingStrategy:
         return pd.DataFrame(all_trades)
 
     def _get_session_equity(self, session: str, current_price: float) -> float:
+    #"""Calculate total equity (cash + unrealized PnL) for a session"""
         cash = self.session_capital[session]
         unrealized_pnl = 0.0
 
@@ -300,5 +294,7 @@ def get_bet_sizing(method: BetSizingMethod, past_returns: pd.Series = None) -> B
         return PercentVolatilityBetSizing(risk_fraction=0.01)
     elif method == BetSizingMethod.OPTIMAL_F:
         return OptimalF(min_trades=20, default_fraction=0.01)
+
     else:
         raise ValueError(f"Unsupported bet sizing method: {method}")
+

@@ -1,24 +1,16 @@
 from typing import Protocol, Dict
 import pandas as pd
+import numpy as np
 
 class BetSizingStrategy(Protocol):
     def compute_position(self, capital: float, price: float, stop_loss: float) -> tuple:
         ...
 
-import numpy as np
-import pandas as pd
-
-import numpy as np
-import pandas as pd
-
-import numpy as np
-import pandas as pd
-
 class KellyBetSizing:
     def __init__(self, min_trades: int = 20, risk_pct: float = 0.01):
         self.min_trades = min_trades
         self.risk_pct = risk_pct  # 1% default for early phase
-        self.trade_returns = []  # Always a plain Python list
+        self.trade_returns = []
         self.kelly_fraction = 0.0
 
     def update_with_trade_result(self, pnl: float, risk_amount: float):
@@ -91,6 +83,7 @@ class FixedBetSize:
         return position_size, self.fixed_trade_size
 
 class PercentVolatilityBetSizing:
+    requires_context = True
     def __init__(self, risk_fraction: float = 0.01, atr_column: str = 'atr_14'):
         self.risk_fraction = risk_fraction
         self.atr_column = atr_column
@@ -106,3 +99,59 @@ class PercentVolatilityBetSizing:
         risk_amount = equity * self.risk_fraction
         position_size = risk_amount / atr
         return position_size, risk_amount
+
+class OptimalF:
+    def __init__(self, min_trades: int = 20, default_fraction: float = 0.01):
+        self.min_trades = min_trades
+        self.default_fraction = default_fraction
+        self.trade_returns = []
+        self.optimal_f = default_fraction
+        self.total_trades_seen = 0  # ✅ NEW: Tracks total trades processed (not just rolling window)
+
+    def update_with_trade_result(self, pnl: float, risk_amount: float = None):
+        self.total_trades_seen += 1  # ✅ Track total trades (for fallback logic)
+        self.trade_returns.append(pnl)
+        if len(self.trade_returns) > self.min_trades:
+            self.trade_returns.pop(0)
+
+    def _compute_optimal_f(self) -> float:
+        if len(self.trade_returns) < self.min_trades:
+            return self.default_fraction
+
+        biggest_loss = min(self.trade_returns)
+        if biggest_loss >= 0:
+            return 0.0  # No losses yet, can't compute
+
+        f_values = np.linspace(0.01, 1.0, 100)
+        best_f = 0.0
+        best_twr = -np.inf
+
+        for f in f_values:
+            twr = 1.0
+            for trade in self.trade_returns:
+                hpr = 1 + f * (trade / abs(biggest_loss))
+                if hpr <= 0:
+                    twr = -np.inf  # Skip invalid cases
+                    break
+                twr *= hpr
+            if twr > best_twr:
+                best_twr = twr
+                best_f = f
+
+        return best_f
+
+    def compute_position(self, capital: float, price: float, stop_loss: float) -> tuple:
+        # Use total_trades_seen to decide fallback
+        if self.total_trades_seen < self.min_trades:
+            risk_amount = 1000.0  # Fixed amount for first 20 trades
+            position_size = risk_amount / price
+            print(f"[OptimalF] (Fallback) capital={capital}, price={price}, RISK_AMOUNT=1000 (fixed fallback)")
+            return position_size, risk_amount
+        else:
+        # Optimal f logic starts after enough trades
+            self.optimal_f = self._compute_optimal_f()
+            risk_amount = capital * self.optimal_f
+            position_size = risk_amount / price
+            print(f"[OptimalF] (Optimal f) capital={capital}, optimal_f={self.optimal_f:.4f}, risk_amount={risk_amount:.2f}")
+            return position_size, risk_amount
+
