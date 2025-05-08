@@ -7,62 +7,73 @@ class BetSizingStrategy(Protocol):
         ...
 
 class KellyBetSizing:
-    def __init__(self, min_trades: int = 20, risk_pct: float = 0.01):
-        self.min_trades = min_trades
-        self.risk_pct = risk_pct  # 1% default for early phase
-        self.trade_returns = []
-        self.kelly_fraction = 0.0
+    def __init__(self, window_size: int = 100, fallback_fraction: float = 0.02):
+        """
+        Kelly Criterion with cumulative stats (no rolling window after warmup).
 
-    def update_with_trade_result(self, pnl: float, risk_amount: float):
-        if risk_amount > 0:
-            self.trade_returns.append(pnl / risk_amount)
-            if len(self.trade_returns) > self.min_trades:
-                self.trade_returns.pop(0)
+        :param window_size: Number of initial trades to warm up before using Kelly (e.g., 100).
+        :param fallback_fraction: Fraction of capital to bet for the first 100 trades (e.g., 0.02 = 2%).
+        """
+        self.window_size = window_size
+        self.fallback_fraction = fallback_fraction
+        self.trade_history = []  # Store ALL trades cumulatively
+        self.total_trades_seen = 0
+        self.limit_hits = 0  # Track how often f > 1 was capped
 
-    def _compute_kelly_fraction(self) -> float:
-        if len(self.trade_returns) < self.min_trades:
-            return 0.0
-
-        returns = pd.Series(self.trade_returns)
-        pos = returns[returns > 0]
-        neg = returns[returns < 0]
-
-        if len(pos) == 0 or len(neg) == 0:
-            return 0.0
-
-        p = len(pos) / len(returns)
-        win_avg = pos.mean()
-        loss_avg = abs(neg.mean())
-
-        ratio = win_avg / loss_avg if loss_avg != 0 else 0
-        kelly = p - ((1 - p) / ratio) if ratio != 0 else 0
-
-        return max(0, min(kelly, 1))
+    def update_with_trade_result(self, pnl: float, risk_amount: float = None):
+        """Track the result of each trade (P&L only)."""
+        self.total_trades_seen += 1
+        self.trade_history.append(pnl)
 
     def compute_position(self, capital: float, price: float, stop_loss: float) -> tuple:
-        risk_per_unit = abs(price - stop_loss)
-
-        # Use fixed risk approach (1% of capital with stop-loss-aware sizing)
-        if len(self.trade_returns) < self.min_trades:
-            position_size = (capital * self.risk_pct) / risk_per_unit if risk_per_unit != 0 else 0
-            risk_amount = risk_per_unit * position_size
-
-            # Failsafe: fallback if calculation explodes
-            if not (np.isfinite(position_size).all() and np.isfinite(risk_amount).all()):
-                position_size = (capital * self.risk_pct) / (price * 0.01)
-                risk_amount = capital * self.risk_pct
-
+        """
+        Bets using fallback for first N trades, then switches to cumulative Kelly Criterion.
+        """
+        # === Fallback: Use fixed % risk until we have enough data ===
+        if self.total_trades_seen < self.window_size:
+            risk_amount = capital * self.fallback_fraction
+            print(f"[Kelly] (Fallback) capital={capital:.2f}, price={price:.2f}, risk_amount={risk_amount:.2f}")
+            position_size = risk_amount / price
             return position_size, risk_amount
 
-        # Use Kelly fraction after enough trade history
-        self.kelly_fraction = self._compute_kelly_fraction()
-        risk_amount = capital * self.kelly_fraction
-        position_size = risk_amount / risk_per_unit if risk_per_unit != 0 else 0
+        # === Kelly logic starts here (cumulative stats) ===
+        wins = [p for p in self.trade_history if p > 0]
+        losses = [p for p in self.trade_history if p < 0]
+
+        p = len(wins) / len(self.trade_history) if self.trade_history else 0
+        b1 = np.mean(wins) if wins else 0
+        b2 = abs(np.mean(losses)) if losses else 0  # Keep positive
+
+        # Kelly formula (Chen et al. style)
+        if b1 == 0 or b2 == 0:
+            f = 0.0  # Avoid div by zero
+        else:
+            f = abs((p * b1 - (1 - p) * b2) / (b1 * b2))
+
+        # Cap f between 0 and 1
+        if f > 1.0:
+            self.limit_hits += 1
+            f_capped = 1.0
+        elif f < 0:
+            f_capped = 0.0
+        else:
+            f_capped = f
+
+        risk_amount = capital * f_capped
+        position_size = risk_amount / price
+
+        print(f"[Kelly] capital={capital:.2f}, p={p:.2f}, b1={b1:.2f}, b2={b2:.2f}, "
+              f"f={f:.4f} (capped={f_capped:.4f}), risk_amount={risk_amount:.2f}")
 
         return position_size, risk_amount
 
+    def report_limit_hits(self):
+        """Report how many times f > 1 was capped during the run."""
+        print(f"[Kelly] The cap of f > 1 was hit {self.limit_hits} times during the backtest.")
+
+
 class FixedFractionalBetSizing:
-    def __init__(self, investment_fraction: float = 0.01):
+    def __init__(self, investment_fraction: float = 0.2):
         self.investment_fraction = investment_fraction  # e.g., 0.01 for 1% of equity
 
     def compute_position(self, capital: float, price: float, stop_loss: float, context: dict = None) -> tuple:
@@ -71,7 +82,7 @@ class FixedFractionalBetSizing:
         return position_size, amount_to_invest
 
 class FixedBetSize:
-    def __init__(self, fixed_trade_size: float = 2000):
+    def __init__(self, fixed_trade_size: float = 20000):
         self.fixed_trade_size = fixed_trade_size
 
     def compute_position(self, capital: float, price: float, stop_loss: float) -> tuple:

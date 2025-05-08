@@ -7,7 +7,7 @@ import logging
 from enum import Enum
 from bet_sizing import KellyBetSizing, FixedFractionalBetSizing, BetSizingStrategy, FixedBetSize, PercentVolatilityBetSizing, OptimalF
 
-# Configure logging
+# Configure logging OLD
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
@@ -291,11 +291,11 @@ class TradingStrategy:
 
 def get_bet_sizing(method: BetSizingMethod, past_returns: pd.Series = None) -> BetSizingStrategy:
     if method == BetSizingMethod.KELLY:
-        return KellyBetSizing()
+        return KellyBetSizing(window_size=100, fallback_fraction=0.02)
     elif method == BetSizingMethod.FIXED:
         return FixedFractionalBetSizing(investment_fraction=0.2)
     elif method == BetSizingMethod.FIXED_AMOUNT:
-        return FixedBetSize(fixed_trade_size=2000)
+        return FixedBetSize(fixed_trade_size=20000)
     elif method == BetSizingMethod.PERCENT_VOLATILITY:
         return PercentVolatilityBetSizing(risk_fraction=0.01)
     elif method == BetSizingMethod.OPTIMAL_F:

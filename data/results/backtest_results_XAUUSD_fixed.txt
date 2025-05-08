@@ -10,10 +10,10 @@ Final Capital: $99,975.36
 Total PnL: $-24.64
 Return: -0.02%
 Win Rate: 49.51% (759W/774L)
-Max Drawdown: 0.11%
+Max Drawdown: 2.17%
 Sharpe Ratio: 0.00
-Skewness: -0.837
-Excess Kurtosis: 1.516
+Skewness: -0.834
+Excess Kurtosis: 1.504
 
 Attempt Analysis:
 
@@ -44,10 +44,10 @@ Final Capital: $107,031.90
 Total PnL: $7,031.90
 Return: 7.03%
 Win Rate: 49.46% (920W/940L)
-Max Drawdown: 0.15%
-Sharpe Ratio: 0.79
-Skewness: -1.059
-Excess Kurtosis: 0.455
+Max Drawdown: 2.91%
+Sharpe Ratio: 0.78
+Skewness: -1.056
+Excess Kurtosis: 0.448
 
 Attempt Analysis:
 
@@ -78,10 +78,10 @@ Final Capital: $103,188.52
 Total PnL: $3,188.52
 Return: 3.19%
 Win Rate: 50.33% (920W/908L)
-Max Drawdown: 0.10%
-Sharpe Ratio: 0.38
-Skewness: -1.018
-Excess Kurtosis: 0.396
+Max Drawdown: 2.03%
+Sharpe Ratio: 0.37
+Skewness: -1.016
+Excess Kurtosis: 0.390
 
 Attempt Analysis:
 
