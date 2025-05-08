@@ -42,6 +42,7 @@ class TradeSetup:
     position_size: float
     risk_amount: float
     session: str
+    atr_value: Optional[float] = None
 
 @dataclass
 class Trade:
@@ -103,18 +104,27 @@ class TradingStrategy:
     def _create_trade_setup(self, entry_time: pd.Timestamp, price: float, direction: str, attempt: int, ref_close: float, session: str) -> TradeSetup:
         stop_loss, take_profit = self._calculate_trade_levels(price, direction, attempt)
         current_equity = self._get_session_equity(session, price)
+        available_cash = self._get_session_available_cash(session)
 
         atr_value = self.data.loc[entry_time, 'atr_14'] if entry_time in self.data.index else None
         context = {'atr_14': atr_value}
 
         if hasattr(self.bet_sizing, "requires_context") and self.bet_sizing.requires_context:
-            position_size, risk_amount = self.bet_sizing.compute_position(
-                current_equity, price, stop_loss, context=context
+            position_size, risk_amount, atr_value = self.bet_sizing.compute_position(
+                equity=current_equity,
+                price=price,
+                stop_loss=stop_loss,
+                available_cash=available_cash,  # ✅ pass available_cash
+                context=context
             )
         else:
             position_size, risk_amount = self.bet_sizing.compute_position(
-                current_equity, price, stop_loss
+                equity=current_equity,
+                price=price,
+                stop_loss=stop_loss
+                # ✅ available_cash is optional; skip for bet sizings that don't use it
             )
+            atr_value = None  # fallback, since no context-based sizing
 
         return TradeSetup(
             direction=direction,
@@ -125,8 +135,10 @@ class TradingStrategy:
             ref_close=ref_close,
             position_size=position_size,
             risk_amount=risk_amount,
-            session=session
+            session=session,
+            atr_value=atr_value  # ✅ ensure this is included in TradeSetup
         )
+
 
     def generate_signals(self) -> None:
         self.trade_signals = {s.name: [] for s in self.SESSIONS}
@@ -196,10 +208,13 @@ class TradingStrategy:
                 return True
             if self._check_stop_loss(trade, price_data):
                 self._close_trade(trade, timestamp, trade.setup.stop_loss, 'sl_hit')
+
+                # Check if a re-entry is allowed
                 if trade.setup.attempt < self.MAX_ATTEMPTS and timestamp < session_end:
                     new_price = trade.setup.stop_loss
                     new_entry_time = timestamp
 
+                    # ✅ Create new trade setup for retry
                     new_setup = self._create_trade_setup(
                         entry_time=new_entry_time,
                         price=new_price,
@@ -208,11 +223,24 @@ class TradingStrategy:
                         ref_close=trade.setup.ref_close,
                         session=trade.session
                     )
-                    trades_to_process.append(Trade(timestamp, new_setup, trade.session))
+
+                    # FIX: Set equity_at_entry for the new trade attempt
+                    equity_at_entry = self._get_session_equity(trade.session, new_price)
+
+                    # Append re-entry trade to processing queue
+                    trades_to_process.append(Trade(
+                        entry_time=new_entry_time,
+                        setup=new_setup,
+                        session=trade.session,
+                        equity_at_entry=equity_at_entry
+                    ))
                 return True
+
+        # If session ends and neither TP nor SL hit
         last_price = prices.iloc[-1]['close'] if not prices.empty else trade.setup.entry_price
         self._close_trade(trade, session_end, last_price, 'session_close')
         return True
+
 
     def _get_session_prices(self, start_time: pd.Timestamp, end_time: pd.Timestamp) -> pd.DataFrame:
         mask = (self.data.index > start_time) & (self.data.index <= end_time)
@@ -269,7 +297,8 @@ class TradingStrategy:
                 'date': t.entry_time.date(),
                 'day_of_week': t.entry_time.day_name(),
                 'equity_at_entry': t.equity_at_entry,
-                'duration_minutes': (t.exit_time - t.entry_time).total_seconds() / 60 if t.exit_time else None
+                'duration_minutes': (t.exit_time - t.entry_time).total_seconds() / 60 if t.exit_time else None,
+                'atr_value': t.setup.atr_value
             } for t in session_trades])
         return pd.DataFrame(all_trades)
 
@@ -287,6 +316,17 @@ class TradingStrategy:
             unrealized_pnl += (current_price - entry) * size * direction
 
         return cash + unrealized_pnl
+
+    def _get_session_available_cash(self, session: str) -> float:
+        cash = self.session_capital[session]
+        allocated_capital = 0.0
+
+        for trade in self.trades[session]:
+            if trade.status == 'open':
+                allocated_capital += trade.setup.position_size * trade.setup.entry_price
+
+        return cash - allocated_capital
+
 
 
 def get_bet_sizing(method: BetSizingMethod, past_returns: pd.Series = None) -> BetSizingStrategy:
