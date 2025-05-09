@@ -19,57 +19,73 @@ class KellyBetSizing:
         self.trade_history = []  # Store ALL trades cumulatively
         self.total_trades_seen = 0
         self.limit_hits = 0  # Track how often f > 1 was capped
+        self.cash_cap_hits = 0  # Track how often available_cash capped position size
 
     def update_with_trade_result(self, pnl: float, risk_amount: float = None):
         """Track the result of each trade (P&L only)."""
         self.total_trades_seen += 1
         self.trade_history.append(pnl)
 
-    def compute_position(self, capital: float, price: float, stop_loss: float) -> tuple:
+    def compute_position(
+        self,
+        equity: float,
+        price: float,
+        stop_loss: float,
+        context: Optional[Dict] = None,
+        available_cash: Optional[float] = None
+    ) -> tuple:
         """
         Bets using fallback for first N trades, then switches to cumulative Kelly Criterion.
+        Caps position size if available_cash is provided.
         """
         # === Fallback: Use fixed % risk until we have enough data ===
         if self.total_trades_seen < self.window_size:
-            risk_amount = capital * self.fallback_fraction
-            print(f"[Kelly] (Fallback) capital={capital:.2f}, price={price:.2f}, risk_amount={risk_amount:.2f}")
-            position_size = risk_amount / price
-            return position_size, risk_amount
-
-        # === Kelly logic starts here (cumulative stats) ===
-        wins = [p for p in self.trade_history if p > 0]
-        losses = [p for p in self.trade_history if p < 0]
-
-        p = len(wins) / len(self.trade_history) if self.trade_history else 0
-        b1 = np.mean(wins) if wins else 0
-        b2 = abs(np.mean(losses)) if losses else 0  # Keep positive
-
-        # Kelly formula (Chen et al. style)
-        if b1 == 0 or b2 == 0:
-            f = 0.0  # Avoid div by zero
+            risk_amount = equity * self.fallback_fraction
+            position_size = risk_amount / price if price != 0 else 0
+            print(f"[Kelly] (Fallback) equity={equity:.2f}, price={price:.2f}, risk_amount={risk_amount:.2f}")
         else:
-            f = abs((p * b1 - (1 - p) * b2) / (b1 * b2))
+            # === Kelly logic starts here (cumulative stats) ===
+            wins = [p for p in self.trade_history if p > 0]
+            losses = [p for p in self.trade_history if p < 0]
 
-        # Cap f between 0 and 1
-        if f > 1.0:
-            self.limit_hits += 1
-            f_capped = 1.0
-        elif f < 0:
-            f_capped = 0.0
-        else:
-            f_capped = f
+            p = len(wins) / len(self.trade_history) if self.trade_history else 0
+            b1 = np.mean(wins) if wins else 0
+            b2 = abs(np.mean(losses)) if losses else 0  # Keep positive
 
-        risk_amount = capital * f_capped
-        position_size = risk_amount / price
+            if b1 == 0 or b2 == 0:
+                f = 0.0  # Avoid div by zero
+            else:
+                f = (p * b1 - (1 - p) * b2) / (b1 * b2)
 
-        print(f"[Kelly] capital={capital:.2f}, p={p:.2f}, b1={b1:.2f}, b2={b2:.2f}, "
-              f"f={f:.4f} (capped={f_capped:.4f}), risk_amount={risk_amount:.2f}")
+            # Cap f between 0 and 1
+            if f > 1.0:
+                self.limit_hits += 1
+                f_capped = 1.0
+            elif f < 0:
+                f_capped = 0.0
+            else:
+                f_capped = f
+
+            risk_amount = equity * f_capped
+            position_size = risk_amount / price if price != 0 else 0
+
+            print(f"[Kelly] equity={equity:.2f}, p={p:.2f}, b1={b1:.2f}, b2={b2:.2f}, "
+                  f"f={f:.4f} (capped={f_capped:.4f}), risk_amount={risk_amount:.2f}")
+
+        # Cap position size if available_cash is provided
+        if available_cash is not None:
+            max_position_size = available_cash / price if price != 0 else 0
+            if position_size > max_position_size:
+                position_size = max_position_size
+                self.cash_cap_hits += 1  # Increment cash cap counter
 
         return position_size, risk_amount
 
     def report_limit_hits(self):
-        """Report how many times f > 1 was capped during the run."""
+        """Report how many times f > 1 was capped and how often the cash cap was hit."""
         print(f"[Kelly] The cap of f > 1 was hit {self.limit_hits} times during the backtest.")
+        print(f"[Kelly] The available cash cap was hit {self.cash_cap_hits} times during the backtest.")
+
 
 
 class FixedFractionalBetSizing:

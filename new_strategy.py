@@ -114,7 +114,7 @@ class TradingStrategy:
                 equity=current_equity,
                 price=price,
                 stop_loss=stop_loss,
-                available_cash=available_cash,  # ✅ pass available_cash
+                available_cash=available_cash,  # pass available_cash
                 context=context
             )
         else:
@@ -162,7 +162,7 @@ class TradingStrategy:
                 })
 
     def simulate_trades(self) -> None:
-        # ✅ New: Flatten all signals into a global list and sort by time
+        #  New: Flatten all signals into a global list and sort by time
         all_signals = []
         for session_name, signals in self.trade_signals.items():
             for signal in signals:
@@ -214,7 +214,7 @@ class TradingStrategy:
                     new_price = trade.setup.stop_loss
                     new_entry_time = timestamp
 
-                    # ✅ Create new trade setup for retry
+                    # Create new trade setup for retry
                     new_setup = self._create_trade_setup(
                         entry_time=new_entry_time,
                         price=new_price,
