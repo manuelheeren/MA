@@ -5,7 +5,7 @@ import numpy as np
 from datetime import time
 import logging
 from enum import Enum
-from bet_sizing import KellyBetSizing, FixedFractionalBetSizing, BetSizingStrategy, FixedBetSize, PercentVolatilityBetSizing, OptimalF
+from bet_sizing import KellyBetSizing, FixedFractionalBetSizing, BetSizingStrategy, FixedBetSize, PercentVolatilityBetSizing, OptimalF, OptimalF2
 
 # Configure logging OLD
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -23,6 +23,7 @@ class BetSizingMethod(Enum):
     FIXED_AMOUNT = "fixed_amount"
     PERCENT_VOLATILITY = "percent_volatility"
     OPTIMAL_F = "optimal_f"
+    Optimal_F2 = "optimal_f2"
 
 @dataclass(frozen=True)
 class SessionTime:
@@ -115,14 +116,16 @@ class TradingStrategy:
                 price=price,
                 stop_loss=stop_loss,
                 available_cash=available_cash,  # pass available_cash
-                context=context
+                context=context,
+                session=session
             )
         else:
             position_size, risk_amount = self.bet_sizing.compute_position(
                 equity=current_equity,
                 price=price,
-                stop_loss=stop_loss
-                # ✅ available_cash is optional; skip for bet sizings that don't use it
+                stop_loss=stop_loss,
+                session=session
+                # available_cash is optional; skip for bet sizings that don't use it
             )
             atr_value = None  # fallback, since no context-based sizing
 
@@ -136,7 +139,7 @@ class TradingStrategy:
             position_size=position_size,
             risk_amount=risk_amount,
             session=session,
-            atr_value=atr_value  # ✅ ensure this is included in TradeSetup
+            atr_value=atr_value,
         )
 
 
@@ -158,7 +161,7 @@ class TradingStrategy:
                     'entry_time': session_start,
                     'direction': direction,
                     'ref_close': prev_close,
-                    'session_name': session.name  # ✅ Add session info
+                    'session_name': session.name  # Add session info
                 })
 
     def simulate_trades(self) -> None:
@@ -273,7 +276,18 @@ class TradingStrategy:
         trade.pnl = gross_pnl
         self.session_capital[trade.session] += trade.pnl
         if hasattr(self.bet_sizing, "update_with_trade_result"):
-            self.bet_sizing.update_with_trade_result(trade.pnl, trade.setup.risk_amount)
+            try:
+                self.bet_sizing.update_with_trade_result(
+                    pnl=trade.pnl,
+                    risk_amount=trade.setup.risk_amount,
+                    session=trade.session
+                )
+            except TypeError:
+                # For older bet sizings that don't accept `session`
+                self.bet_sizing.update_with_trade_result(
+                    pnl=trade.pnl,
+                    risk_amount=trade.setup.risk_amount
+                )
 
     def get_trade_data(self) -> pd.DataFrame:
         all_trades = []
@@ -340,5 +354,7 @@ def get_bet_sizing(method: BetSizingMethod, past_returns: pd.Series = None) -> B
         return PercentVolatilityBetSizing(risk_fraction=0.01)
     elif method == BetSizingMethod.OPTIMAL_F:
         return OptimalF(min_trades=20, default_fraction=0.01)
+    elif method == BetSizingMethod.Optimal_F2:
+        return OptimalF2(min_trades=20, default_fraction=0.01)
     else:
         raise ValueError(f"Unsupported bet sizing method: {method}")

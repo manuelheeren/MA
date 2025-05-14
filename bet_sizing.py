@@ -223,10 +223,160 @@ class OptimalF:
     def __init__(self, min_trades: int = 20, default_fraction: float = 0.01):
         self.min_trades = min_trades
         self.default_fraction = default_fraction
+        self.trade_returns_by_session = {}  # Dict: session → list of h values
+        self.optimal_f_by_session = {}      # Dict: session → current optimal f
+        self.total_trades_seen = 0
+        self.limit_hit_counter = 0  # Tracks how often position size was capped
+        
+        # Debugging
+        self.skipped_trades = 0
+        self.valid_trades = 0
+
+    def update_with_trade_result(self, pnl: float, risk_amount: float = None, session: str = None):
+        """Update the trade history with new trade results for a specific session"""
+        self.total_trades_seen += 1
+
+        # Validate trade parameters
+        if risk_amount is None or risk_amount == 0 or session is None:
+            self.skipped_trades += 1
+            print(f"[OptimalF] Skipped trade (invalid risk_amount={risk_amount} or session={session})")
+            return
+
+        # Store raw PnL for this session
+        if session not in self.trade_returns_by_session:
+            self.trade_returns_by_session[session] = []
+        
+        self.trade_returns_by_session[session].append(pnl)
+        self.valid_trades += 1
+
+        # Cap rolling window size
+        if len(self.trade_returns_by_session[session]) > self.min_trades:
+            self.trade_returns_by_session[session].pop(0)
+
+        print(f"[OptimalF] Trade added: session={session}, pnl={pnl:.2f}, total_trades={len(self.trade_returns_by_session[session])}")
+
+
+    def _compute_optimal_f(self, session: str) -> float:
+        """Calculate optimal f for a specific session"""
+        trades = self.trade_returns_by_session.get(session, [])
+
+        # Use default if not enough trades
+        if len(trades) < self.min_trades:
+            print(f"[OptimalF] Not enough trades to compute f for session '{session}' ({len(trades)}/{self.min_trades})")
+            return self.default_fraction
+
+        biggest_loss = min(trades)
+        if biggest_loss >= 0:
+            print(f"[OptimalF] No losses found in session '{session}' — fallback to f = 0.0")
+            return 0.0
+
+        print(f"[OptimalF] Computing f for session '{session}'")
+        print(f"  ↳ Rolling window size: {len(trades)}")
+        print(f"  ↳ Biggest loss in window: {biggest_loss:.2f}")
+
+        f_values = np.linspace(0.01, 1.0, 100)
+        best_f = 0.0
+        best_twr = -np.inf
+
+        for f in f_values:
+            twr = 1.0
+            for trade in trades:
+                hpr = 1 + f * (trade / abs(biggest_loss))
+                if hpr <= 0:
+                    twr = -np.inf
+                    break
+                twr *= hpr
+
+            if twr > best_twr:
+                best_twr = twr
+                best_f = f
+
+        print(f"[OptimalF] Best f for session '{session}' = {best_f:.4f}")
+        return best_f
+
+
+
+    def compute_position(
+        self,
+        equity: float,
+        price: float,
+        stop_loss: float,
+        context: Optional[Dict] = None,
+        available_cash: Optional[float] = None,
+        session: Optional[str] = None
+    ) -> tuple:
+        """
+        Calculate position size using optimal-f
+        
+        Args:
+            equity: Current equity value
+            price: Current price
+            stop_loss: Stop loss price (not used in this implementation)
+            context: Optional context data (not used)
+            available_cash: Available cash for position sizing
+            session: Trading session name
+            
+        Returns:
+            Tuple of (position_size, risk_amount)
+        """
+        if session is None:
+            print("[OptimalF] Warning: No session provided, using default fraction")
+            risk_amount = equity * self.default_fraction
+            position_size = risk_amount / price if price != 0 else 0
+            return position_size, risk_amount
+
+        # Get trade returns for this specific session
+        trade_returns = self.trade_returns_by_session.get(session, [])
+        
+        # Debug info
+        print(f"[OptimalF] Session: {session}, available trades: {len(trade_returns)}/{self.min_trades}")
+        
+        # Use default if not enough trades for this session
+        if len(trade_returns) < self.min_trades:
+            risk_amount = equity * self.default_fraction
+            position_size = risk_amount / price if price != 0 else 0
+            print(f"[OptimalF] (Default) session={session}, equity={equity:.2f}, price={price:.2f}, risk={self.default_fraction:.4f}, risk_amount={risk_amount:.2f}")
+        else:
+            # Calculate optimal f for this session
+            optimal_f = self._compute_optimal_f(session)
+            self.optimal_f_by_session[session] = optimal_f
+            
+            risk_amount = equity * optimal_f
+            position_size = risk_amount / price if price != 0 else 0
+            print(f"[OptimalF] (Optimal) session={session}, equity={equity:.2f}, optimal_f={optimal_f:.4f}, risk_amount={risk_amount:.2f}")
+
+        # Cap position size if available_cash is provided
+        if available_cash is not None and available_cash > 0:
+            max_position_size = available_cash / price if price != 0 else 0
+            if position_size > max_position_size:
+                original_position = position_size
+                position_size = max_position_size
+                self.limit_hit_counter += 1
+                print(f"[OptimalF] Position size capped: {original_position:.2f} → {position_size:.2f} (hit #{self.limit_hit_counter})")
+
+        return position_size, risk_amount
+
+    def report_limit_hits(self):
+        """Report statistics about position size limits and trade tracking"""
+        print(f"[OptimalF] Statistics:")
+        print(f"  - Total trades seen: {self.total_trades_seen}")
+        print(f"  - Valid trades used: {self.valid_trades}")
+        print(f"  - Skipped trades: {self.skipped_trades}")
+        print(f"  - Available cash cap was hit {self.limit_hit_counter} times")
+        
+        # Report per-session data
+        for session, trades in self.trade_returns_by_session.items():
+            optimal_f = self.optimal_f_by_session.get(session, self.default_fraction)
+            print(f"  - Session '{session}': {len(trades)} trades, optimal_f={optimal_f:.4f}")
+
+class OptimalF2:
+    def __init__(self, min_trades: int = 20, default_fraction: float = 0.01):
+        self.min_trades = min_trades
+        self.default_fraction = default_fraction
         self.trade_returns = []
         self.optimal_f = default_fraction
         self.total_trades_seen = 0
-        self.limit_hit_counter = 0  # ✅ Tracks how often position size was capped
+        self.limit_hit_counter = 0  #  Tracks how often position size was capped
 
     def update_with_trade_result(self, pnl: float, risk_amount: float = None):
         self.total_trades_seen += 1
@@ -266,7 +416,8 @@ class OptimalF:
         price: float,
         stop_loss: float,
         context: Optional[Dict] = None,
-        available_cash: Optional[float] = None
+        available_cash: Optional[float] = None,
+        session = None
     ) -> tuple:
         if self.total_trades_seen < self.min_trades:
             risk_amount = 1000.0
@@ -286,4 +437,3 @@ class OptimalF:
                 self.limit_hit_counter += 1  # Increment counter when cap is hit
 
         return position_size, risk_amount
-
