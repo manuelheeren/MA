@@ -59,7 +59,7 @@ def merge_with_raw_features(trade_df: pd.DataFrame, asset: str) -> pd.DataFrame:
 
     # Select only columns needed for merge
     selected_columns = [
-        "entry_time", "ma_14", "ma_30", "ma_100",
+        "entry_time","atr_14", "ma_14", "ma_30", "ma_100",
         "day_of_week", "week_number",
         "max_price_14", "min_price_14",
         "max_price_30", "min_price_30",

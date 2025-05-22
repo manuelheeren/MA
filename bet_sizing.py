@@ -98,7 +98,8 @@ class FixedFractionalBetSizing:
         price: float,
         stop_loss: float,
         context: Optional[Dict] = None,
-        available_cash: Optional[float] = None
+        available_cash: Optional[float] = None,
+        session = None
     ) -> tuple:
         """
         Calculate position size using a fixed fraction of equity.
@@ -135,34 +136,40 @@ class FixedBetSize:
         price: float,
         stop_loss: float,
         context: Optional[Dict] = None,
-        available_cash: Optional[float] = None
+        available_cash: Optional[float] = None,
+        session = None
     ) -> tuple:
         """
         Calculate position size using a fixed dollar amount per trade.
-
-        Args:
-            equity (float): Total equity (used for capital check).
-            price (float): Current asset price.
-            stop_loss (float): Stop loss price (not used here).
-            context (Optional[Dict]): Extra data (ignored).
-            available_cash (Optional[float]): Available cash to cap position size (optional).
-
-        Returns:
-            tuple: (position_size, fixed_trade_size)
+        Also includes feature data in returned context dict.
         """
-        # Basic capital check: if not enough equity, skip the trade
         if equity < self.fixed_trade_size:
-            return 0, 0
+            return 0, 0, context or {}
 
         position_size = self.fixed_trade_size / price if price != 0 else 0
 
-        #  Optional: cap position size to available_cash if provided
+        # Cap position size to available cash if needed
         if available_cash is not None:
             max_position_size = available_cash / price if price != 0 else 0
             if position_size > max_position_size:
                 position_size = max_position_size
 
-        return position_size, self.fixed_trade_size
+        # 🔁 Return context including all available features (passed in or empty)
+        if context is None:
+            context = {}
+
+        context.update({
+            "ma_14": context.get("ma_14"),
+            "atr_14": context.get("atr_14"),
+            "min_price_30": context.get("min_price_30"),
+            "max_price_30": context.get("max_price_30"),
+            "session": session,
+            "attempt": context.get("attempt"),
+            "ref_close": context.get("ref_close")
+        })
+
+        return position_size, self.fixed_trade_size, context
+
 
 
 class PercentVolatilityBetSizing:
@@ -179,7 +186,8 @@ class PercentVolatilityBetSizing:
         price: float,
         stop_loss: float,
         context: Dict = None,
-        available_cash: Optional[float] = None
+        available_cash: Optional[float] = None,
+        session = None
     ) -> tuple:
         """
         Calculate position size using the Percent Volatility model.

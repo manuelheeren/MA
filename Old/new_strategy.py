@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-import numpy as np
 from typing import List, Optional, Dict
 import pandas as pd
 import numpy as np
@@ -44,10 +43,7 @@ class TradeSetup:
     position_size: float
     risk_amount: float
     session: str
-    atr_14: Optional[float] = None
-    ma_14: Optional[float] = None
-    min_price_30: Optional[float] = None
-    max_price_30: Optional[float] = None
+    atr_value: Optional[float] = None
 
 @dataclass
 class Trade:
@@ -106,64 +102,33 @@ class TradingStrategy:
             take_profit = price * (1 - tp_pct)
         return stop_loss, take_profit
 
-    def _create_trade_setup(
-        self,
-        entry_time: pd.Timestamp,
-        price: float,
-        direction: str,
-        attempt: int,
-        ref_close: float,
-        session: str
-    ) -> TradeSetup:
+    def _create_trade_setup(self, entry_time: pd.Timestamp, price: float, direction: str, attempt: int, ref_close: float, session: str) -> TradeSetup:
         stop_loss, take_profit = self._calculate_trade_levels(price, direction, attempt)
         current_equity = self._get_session_equity(session, price)
         available_cash = self._get_session_available_cash(session)
 
-        # Extract all needed features from self.data (safe access)
-        feature_cols = ['atr_14', 'ma_14', 'min_price_30', 'max_price_30']
-        context = {}
-        if entry_time in self.data.index:
-            for col in feature_cols:
-                context[col] = self.data.at[entry_time, col]
+        atr_value = self.data.loc[entry_time, 'atr_14'] if entry_time in self.data.index else None
+        context = {'atr_14': atr_value}
+
+        if hasattr(self.bet_sizing, "requires_context") and self.bet_sizing.requires_context:
+            position_size, risk_amount, atr_value = self.bet_sizing.compute_position(
+                equity=current_equity,
+                price=price,
+                stop_loss=stop_loss,
+                available_cash=available_cash,  # pass available_cash
+                context=context,
+                session=session
+            )
         else:
-            for col in feature_cols:
-                context[col] = None  # fallback for missing
+            position_size, risk_amount = self.bet_sizing.compute_position(
+                equity=current_equity,
+                price=price,
+                stop_loss=stop_loss,
+                session=session
+                # available_cash is optional; skip for bet sizings that don't use it
+            )
+            atr_value = None  # fallback, since no context-based sizing
 
-        # Add trade-specific info to context
-        context.update({
-            "attempt": attempt,
-            "ref_close": ref_close
-        })
-
-        # Call the bet sizing strategy
-        result = self.bet_sizing.compute_position(
-            equity=current_equity,
-            price=price,
-            stop_loss=stop_loss,
-            available_cash=available_cash,
-            context=context,
-            session=session
-        )
-
-        # ✅ Handle both 2-value and 3-value return styles safely
-        if isinstance(result, tuple):
-            if len(result) == 3:
-                position_size, risk_amount, enriched_context = result
-            elif len(result) == 2:
-                position_size, risk_amount = result
-                enriched_context = context
-            else:
-                raise ValueError(f"Unexpected number of return values from compute_position: {len(result)}")
-        else:
-            raise ValueError("compute_position must return a tuple")
-
-        # Extract features (fallback to None if not found)
-        atr_14 = enriched_context.get("atr_14")
-        ma_14 = enriched_context.get("ma_14")
-        min_price_30 = enriched_context.get("min_price_30")
-        max_price_30 = enriched_context.get("max_price_30")
-
-        # Return the TradeSetup object
         return TradeSetup(
             direction=direction,
             entry_price=price,
@@ -174,11 +139,9 @@ class TradingStrategy:
             position_size=position_size,
             risk_amount=risk_amount,
             session=session,
-            atr_14=atr_14,
-            ma_14=ma_14,
-            min_price_30=min_price_30,
-            max_price_30=max_price_30
+            atr_value=atr_value,
         )
+
 
     def generate_signals(self) -> None:
         self.trade_signals = {s.name: [] for s in self.SESSIONS}
@@ -202,24 +165,16 @@ class TradingStrategy:
                 })
 
     def simulate_trades(self) -> None:
-        # Flatten all signals from all sessions ('asian', 'london', 'us')
+        #  New: Flatten all signals into a global list and sort by time
         all_signals = []
-        for session_signals in self.trade_signals.values():
-            all_signals.extend(session_signals)
+        for session_name, signals in self.trade_signals.items():
+            for signal in signals:
+                all_signals.append(signal)
 
-        # Sort signals chronologically
-        all_signals.sort(key=lambda x: x['entry_time'])
+        all_signals.sort(key=lambda x: x['entry_time'])  # Global chronological order
 
-        # Process each signal safely
         for signal in all_signals:
-            entry_time = signal['entry_time']
-
-            if entry_time not in self.data.index:
-                print(f"❌ entry_time {entry_time} not in data index — skipping signal.")
-                continue
-
             self._process_single_signal(signal)
-
 
     def _process_single_signal(self, signal: dict) -> None:
         entry_time = signal['entry_time']
@@ -372,11 +327,7 @@ class TradingStrategy:
                 'day_of_week': t.entry_time.day_name(),
                 'equity_at_entry': t.equity_at_entry,
                 'duration_minutes': (t.exit_time - t.entry_time).total_seconds() / 60 if t.exit_time else None,
-                'atr_14': t.setup.atr_14,
-                'ma_14': t.setup.ma_14,
-                'min_price_30': t.setup.min_price_30,
-                'max_price_30': t.setup.max_price_30
-
+                'atr_value': t.setup.atr_value
             } for t in session_trades])
         return pd.DataFrame(all_trades)
 
