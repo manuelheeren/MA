@@ -163,6 +163,12 @@ class TradingStrategy:
         min_price_30 = enriched_context.get("min_price_30")
         max_price_30 = enriched_context.get("max_price_30")
 
+        print("📦 Creating TradeSetup with:")
+        print(f"  entry_time: {entry_time}")
+        print(f"  atr_14: {atr_14}, ma_14: {ma_14}, min_price_30: {min_price_30}, max_price_30: {max_price_30}")
+        print(f"  context keys: {list(context.keys())}")
+
+ 
         # Return the TradeSetup object
         return TradeSetup(
             direction=direction,
@@ -378,6 +384,9 @@ class TradingStrategy:
                 'max_price_30': t.setup.max_price_30
 
             } for t in session_trades])
+            for t in session_trades:
+             print(f"Getting trade data: {t.entry_time} → atr_14={t.setup.atr_14}")
+
         return pd.DataFrame(all_trades)
 
     def _get_session_equity(self, session: str, current_price: float) -> float:

@@ -1,8 +1,8 @@
+
 === XAUUSD Backtest Results ===
-Bet Sizing Strategy: fixed
+Bet Sizing Strategy: fixedfractionalbetsizing
 
 Period: 2023-06-08 to 2024-11-20
-
 
 ASIAN Session Performance:
 Initial Capital: $100,000.00
@@ -105,5 +105,3 @@ Attempt Analysis:
   Win Rate: 37.50% (6W/10L)
   Average Win: $46.89
   Average Loss: $-52.94
-
-==================================================

@@ -89,8 +89,10 @@ class KellyBetSizing:
 
 
 class FixedFractionalBetSizing:
+    requires_context = True 
+
     def __init__(self, investment_fraction: float = 0.2):
-        self.investment_fraction = investment_fraction  # e.g., 0.01 for 1% of equity
+        self.investment_fraction = investment_fraction
 
     def compute_position(
         self,
@@ -99,31 +101,35 @@ class FixedFractionalBetSizing:
         stop_loss: float,
         context: Optional[Dict] = None,
         available_cash: Optional[float] = None,
-        session = None
+        session=None
     ) -> tuple:
         """
         Calculate position size using a fixed fraction of equity.
-
-        Args:
-            equity (float): Total equity (used to calculate investment amount).
-            price (float): Current asset price.
-            stop_loss (float): Stop loss price (not used here).
-            context (Optional[Dict]): Extra data (ignored).
-            available_cash (Optional[float]): Available cash to cap position size (optional).
-
-        Returns:
-            tuple: (position_size, amount_to_invest)
+        Returns enriched context for meta-model compatibility.
         """
         amount_to_invest = equity * self.investment_fraction
         position_size = amount_to_invest / price if price != 0 else 0
 
-        #  Optional: cap to available_cash if provided (for consistency)
         if available_cash is not None:
             max_position_size = available_cash / price if price != 0 else 0
             if position_size > max_position_size:
                 position_size = max_position_size
 
-        return position_size, amount_to_invest
+        
+        if context is None:
+            context = {}
+
+        context.update({
+            "ma_14": context.get("ma_14"),
+            "atr_14": context.get("atr_14"),
+            "min_price_30": context.get("min_price_30"),
+            "max_price_30": context.get("max_price_30"),
+            "session": session,
+            "attempt": context.get("attempt"),
+            "ref_close": context.get("ref_close")
+        })
+
+        return position_size, amount_to_invest, context
 
 
 class FixedBetSize:

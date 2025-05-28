@@ -24,7 +24,16 @@ class MetaLabelingStrategy(TradingStrategy):
             "session": session
         }
 
-        # Always call compute_position once
+        #FIX: Add feature columns into context just like base strategy
+        feature_cols = ['atr_14', 'ma_14', 'min_price_30', 'max_price_30']
+        if entry_time in self.data.index:
+            for col in feature_cols:
+                context[col] = self.data.at[entry_time, col]
+        else:
+            for col in feature_cols:
+                context[col] = None
+
+        # Call compute_position
         try:
             result = self.bet_sizing.compute_position(
                 equity=current_equity,
@@ -35,14 +44,13 @@ class MetaLabelingStrategy(TradingStrategy):
                 session=session
             )
         except TypeError:
-            # Fallback for older implementations
             result = self.bet_sizing.compute_position(
                 equity=current_equity,
                 price=price,
                 stop_loss=stop_loss
             )
 
-        # Handle both 2-tuple and 3-tuple responses
+        # Handle result
         if isinstance(result, tuple):
             if len(result) == 3:
                 position_size, risk_amount, enriched_context = result
@@ -54,10 +62,10 @@ class MetaLabelingStrategy(TradingStrategy):
         else:
             raise ValueError("compute_position must return a tuple")
 
-        # Merge enriched context
+        # Merge enriched context back in
         context.update(enriched_context)
 
-        # Use meta-model to approve/reject
+        # Meta-model filter
         if self.meta_model_handler:
             approved = self.meta_model_handler.is_trade_approved(context, direction)
             if not approved:
@@ -81,3 +89,4 @@ class MetaLabelingStrategy(TradingStrategy):
             min_price_30=context.get("min_price_30"),
             max_price_30=context.get("max_price_30")
         )
+
