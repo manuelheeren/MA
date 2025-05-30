@@ -293,6 +293,10 @@ class TradingStrategy:
                         session=trade.session
                     )
 
+                    if new_setup is None:
+                        print(f"⛔ Retry trade rejected by meta model at {new_entry_time}")
+                        return True  # Don't proceed with this retry
+                        
                     # FIX: Set equity_at_entry for the new trade attempt
                     equity_at_entry = self._get_session_equity(trade.session, new_price)
 

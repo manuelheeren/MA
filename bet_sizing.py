@@ -89,10 +89,10 @@ class KellyBetSizing:
 
 
 class FixedFractionalBetSizing:
-    requires_context = True 
+    requires_context = True  
 
     def __init__(self, investment_fraction: float = 0.2):
-        self.investment_fraction = investment_fraction
+        self.investment_fraction = investment_fraction  # e.g., 0.01 for 1% of equity
 
     def compute_position(
         self,
@@ -110,12 +110,13 @@ class FixedFractionalBetSizing:
         amount_to_invest = equity * self.investment_fraction
         position_size = amount_to_invest / price if price != 0 else 0
 
+        # Cap to available cash if provided
         if available_cash is not None:
             max_position_size = available_cash / price if price != 0 else 0
             if position_size > max_position_size:
                 position_size = max_position_size
 
-        
+        # ✅ Ensure context has all needed meta features
         if context is None:
             context = {}
 
@@ -129,6 +130,7 @@ class FixedFractionalBetSizing:
             "ref_close": context.get("ref_close")
         })
 
+        # ✅ Return 3-tuple as expected
         return position_size, amount_to_invest, context
 
 
@@ -184,7 +186,7 @@ class PercentVolatilityBetSizing:
     def __init__(self, risk_fraction: float = 0.01, atr_column: str = 'atr_14'):
         self.risk_fraction = risk_fraction
         self.atr_column = atr_column
-        self.limit_hit_counter = 0  #  Counter for how often the size limit was hit
+        self.limit_hit_counter = 0
 
     def compute_position(
         self,
@@ -193,42 +195,38 @@ class PercentVolatilityBetSizing:
         stop_loss: float,
         context: Dict = None,
         available_cash: Optional[float] = None,
-        session = None
+        session=None
     ) -> tuple:
-        """
-        Calculate position size using the Percent Volatility model.
+        if context is None:
+            context = {}
 
-        Args:
-            equity (float): Total equity (used to calculate risk_amount).
-            price (float): Current asset price.
-            stop_loss (float): Stop loss price (not used here but kept for API compatibility).
-            context (Dict): Dictionary containing ATR and other indicators.
-            available_cash (Optional[float]): Available cash to cap position size (prevents over-allocation).
-
-        Returns:
-            tuple: (position_size, risk_amount, atr)
-        """
-        if context is None or self.atr_column not in context:
-            return 0, 0, None  # ATR not available
-
-        atr = context[self.atr_column]
+        atr = context.get(self.atr_column)
         if atr is None or not np.isfinite(atr) or atr == 0:
-            return 0, 0, atr  # Return ATR (even if invalid) for logging/debugging
+            context[self.atr_column] = None  # explicitly add to context for output
+            return 0, 0, context
 
-        # Calculate risk amount based on total equity
         risk_amount = equity * self.risk_fraction
-
-        # Initial position size based on ATR
         position_size = risk_amount / atr
 
-        # Cap position size to avoid over-leveraging if available_cash is provided
         if available_cash is not None:
-            max_position_size = available_cash / price  # max units you can buy/sell with available cash
+            max_position_size = available_cash / price
             if position_size > max_position_size:
                 position_size = max_position_size
-                self.limit_hit_counter += 1  # Increment counter when cap is applied
+                self.limit_hit_counter += 1
 
-        return position_size, risk_amount, atr
+        # Enrich context
+        context.update({
+            "ma_14": context.get("ma_14"),
+            "atr_14": context.get("atr_14"),
+            "min_price_30": context.get("min_price_30"),
+            "max_price_30": context.get("max_price_30"),
+            "session": session,
+            "attempt": context.get("attempt"),
+            "ref_close": context.get("ref_close")
+        })
+
+        return position_size, risk_amount, context
+
 
 
 
