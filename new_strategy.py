@@ -6,7 +6,7 @@ import numpy as np
 from datetime import time
 import logging
 from enum import Enum
-from bet_sizing import KellyBetSizing, FixedFractionalBetSizing, BetSizingStrategy, FixedBetSize, PercentVolatilityBetSizing, OptimalF, OptimalF2
+from bet_sizing import KellyBetSizing, FixedFractionalBetSizing, BetSizingStrategy, FixedBetSize, PercentVolatilityBetSizing, OptimalF
 
 # Configure logging OLD
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -24,7 +24,6 @@ class BetSizingMethod(Enum):
     FIXED_AMOUNT = "fixed_amount"
     PERCENT_VOLATILITY = "percent_volatility"
     OPTIMAL_F = "optimal_f"
-    Optimal_F2 = "optimal_f2"
 
 @dataclass(frozen=True)
 class SessionTime:
