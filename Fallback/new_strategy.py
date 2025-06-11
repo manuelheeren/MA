@@ -387,7 +387,8 @@ class TradingStrategy:
                 'max_price_30': t.setup.max_price_30
 
             } for t in session_trades])
-            
+           # for t in session_trades:
+            # print(f"Getting trade data: {t.entry_time} → atr_14={t.setup.atr_14}")
 
         return pd.DataFrame(all_trades)
 
