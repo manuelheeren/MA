@@ -1,109 +1,109 @@
 === XAUUSD Backtest Results ===
 Bet Sizing Strategy: fixed
 
-Period: 2023-06-12 to 2024-11-20
+Period: 2023-05-11 to 2024-11-22
 
 
 ASIAN Session Performance:
 Initial Capital: $100,000.00
-Final Capital: $99,491.03
-Total PnL: $-508.97
-Return: -0.51%
-Win Rate: 47.53% (106W/117L)
-Max Drawdown: 1.38%
-Sharpe Ratio: -0.58
-Skewness: 0.042
-Excess Kurtosis: -0.835
+Final Capital: $100,173.48
+Total PnL: $173.48
+Return: 0.17%
+Win Rate: 48.68% (222W/234L)
+Max Drawdown: 1.18%
+Sharpe Ratio: 0.05
+Skewness: 0.034
+Excess Kurtosis: -0.884
 
 Attempt Analysis:
 
   Attempt 1:
-  Trades: 196 (87.9% of session trades)
-  PnL: $-534.68
-  Win Rate: 45.41% (89W/107L)
-  Average Win: $53.17
-  Average Loss: $-49.68
+  Trades: 401 (87.9% of session trades)
+  PnL: $585.00
+  Win Rate: 48.88% (196W/205L)
+  Average Win: $54.99
+  Average Loss: $-50.46
 
   Attempt 2:
-  Trades: 24 (10.8% of session trades)
-  PnL: $168.95
-  Win Rate: 70.83% (17W/7L)
-  Average Win: $29.83
-  Average Loss: $-48.32
+  Trades: 50 (11.0% of session trades)
+  PnL: $-67.91
+  Win Rate: 52.00% (26W/24L)
+  Average Win: $32.13
+  Average Loss: $-37.63
 
   Attempt 3:
-  Trades: 3 (1.3% of session trades)
-  PnL: $-143.25
-  Win Rate: 0.00% (0W/3L)
+  Trades: 5 (1.1% of session trades)
+  PnL: $-343.61
+  Win Rate: 0.00% (0W/5L)
   Average Win: $0.00
-  Average Loss: $-47.75
+  Average Loss: $-68.72
 
 LONDON Session Performance:
 Initial Capital: $100,000.00
-Final Capital: $101,747.15
-Total PnL: $1,747.15
-Return: 1.75%
-Win Rate: 50.45% (112W/110L)
-Max Drawdown: 0.69%
-Sharpe Ratio: 1.53
-Skewness: 0.077
-Excess Kurtosis: -1.251
+Final Capital: $103,774.76
+Total PnL: $3,774.76
+Return: 3.77%
+Win Rate: 49.73% (277W/280L)
+Max Drawdown: 1.69%
+Sharpe Ratio: 1.25
+Skewness: 0.101
+Excess Kurtosis: -1.313
 
 Attempt Analysis:
 
   Attempt 1:
-  Trades: 164 (73.9% of session trades)
-  PnL: $963.36
-  Win Rate: 51.22% (84W/80L)
-  Average Win: $82.09
-  Average Loss: $-75.09
+  Trades: 402 (72.2% of session trades)
+  PnL: $2,921.16
+  Win Rate: 51.00% (205W/197L)
+  Average Win: $86.12
+  Average Loss: $-75.94
 
   Attempt 2:
-  Trades: 48 (21.6% of session trades)
-  PnL: $888.24
-  Win Rate: 52.08% (25W/23L)
-  Average Win: $94.18
-  Average Loss: $-63.75
+  Trades: 122 (21.9% of session trades)
+  PnL: $778.43
+  Win Rate: 46.72% (57W/65L)
+  Average Win: $88.10
+  Average Loss: $-65.28
 
   Attempt 3:
-  Trades: 10 (4.5% of session trades)
-  PnL: $-104.45
-  Win Rate: 30.00% (3W/7L)
-  Average Win: $77.09
-  Average Loss: $-47.96
+  Trades: 33 (5.9% of session trades)
+  PnL: $75.17
+  Win Rate: 45.45% (15W/18L)
+  Average Win: $71.81
+  Average Loss: $-55.66
 
 US Session Performance:
 Initial Capital: $100,000.00
-Final Capital: $99,581.85
-Total PnL: $-418.15
-Return: -0.42%
-Win Rate: 49.35% (114W/117L)
-Max Drawdown: 1.77%
-Sharpe Ratio: -0.28
-Skewness: 0.045
-Excess Kurtosis: -1.308
+Final Capital: $100,534.43
+Total PnL: $534.43
+Return: 0.53%
+Win Rate: 49.91% (275W/276L)
+Max Drawdown: 1.74%
+Sharpe Ratio: 0.23
+Skewness: 0.125
+Excess Kurtosis: -1.213
 
 Attempt Analysis:
 
   Attempt 1:
-  Trades: 171 (74.0% of session trades)
-  PnL: $707.52
-  Win Rate: 53.22% (91W/80L)
-  Average Win: $69.12
-  Average Loss: $-71.57
+  Trades: 402 (73.0% of session trades)
+  PnL: $2,599.39
+  Win Rate: 54.23% (218W/184L)
+  Average Win: $73.34
+  Average Loss: $-73.97
 
   Attempt 2:
-  Trades: 46 (19.9% of session trades)
-  PnL: $-816.69
-  Win Rate: 36.96% (17W/29L)
-  Average Win: $52.73
-  Average Loss: $-59.07
+  Trades: 113 (20.5% of session trades)
+  PnL: $-1,109.23
+  Win Rate: 40.71% (46W/67L)
+  Average Win: $70.75
+  Average Loss: $-65.13
 
   Attempt 3:
-  Trades: 14 (6.1% of session trades)
-  PnL: $-308.98
-  Win Rate: 42.86% (6W/8L)
-  Average Win: $46.68
-  Average Loss: $-73.63
+  Trades: 36 (6.5% of session trades)
+  PnL: $-955.74
+  Win Rate: 30.56% (11W/25L)
+  Average Win: $47.64
+  Average Loss: $-59.19
 
 ==================================================

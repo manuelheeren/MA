@@ -3,8 +3,8 @@ import pandas as pd
 import numpy as np
 
 class MetaLabelingStrategy(TradingStrategy):
-    def __init__(self, data, asset, bet_sizing, bet_sizing_method, meta_model_handler=None, feature_cols=None):
-        super().__init__(data, asset, bet_sizing, bet_sizing_method)
+    def __init__(self, data, asset, bet_sizing, bet_sizing_method, meta_model_handler=None, feature_cols=None, rolling_window= 10):
+        super().__init__(data, asset, bet_sizing, bet_sizing_method, rolling_window=rolling_window)
         self.meta_model_handler = meta_model_handler
         self.features_to_use = feature_cols or []
         self.rejected_trades = 0
@@ -16,15 +16,17 @@ class MetaLabelingStrategy(TradingStrategy):
         current_equity = self._get_session_equity(session, price)
         available_cash = self._get_session_available_cash(session)
 
-        # Base context
         context = {
-            "attempt": attempt,
-            "ref_close": ref_close,
-            "duration_minutes": 0,
-            "session": session
-        }
+        "attempt": attempt,
+        "ref_close": ref_close,
+        "duration_minutes": 0,
+        "session": session,
+        "eval_f1": self.rolling_metrics.latest().get("rolling_f1")
+    }
+        print(f"✅ [MetaStrategy] At {entry_time}, eval_f1 = {context['eval_f1']}")
 
-        #FIX: Add feature columns into context just like base strategy
+
+        # FIX: Add feature columns into context just like base strategy
         feature_cols = ['atr_14', 'ma_14', 'min_price_30', 'max_price_30']
         if entry_time in self.data.index:
             for col in feature_cols:
@@ -66,6 +68,13 @@ class MetaLabelingStrategy(TradingStrategy):
         context.update(enriched_context)
 
         # Meta-model filter
+        if hasattr(self, 'rolling_metrics'):
+            metrics = self.rolling_metrics.latest()
+            if all(v is not None for v in metrics.values()):  # only inject if window is filled
+                for key, value in metrics.items():
+                    context[key] = value
+                print(f"🧠 Rolling metrics injected at {entry_time}: {metrics}")
+
         if self.meta_model_handler:
             approved = self.meta_model_handler.is_trade_approved(context, direction)
             if not approved:

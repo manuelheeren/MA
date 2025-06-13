@@ -7,6 +7,8 @@ from datetime import time
 import logging
 from enum import Enum
 from bet_sizing import KellyBetSizing, FixedFractionalBetSizing, BetSizingStrategy, FixedBetSize, PercentVolatilityBetSizing, OptimalF
+from collections import deque
+from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 
 # Configure logging OLD
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -85,8 +87,9 @@ class TradingStrategy:
     MAX_ATTEMPTS = 3
     INITIAL_CAPITAL = 100000
 
-    def __init__(self, data: pd.DataFrame, asset: str, bet_sizing: BetSizingStrategy, bet_sizing_method: BetSizingMethod):
+    def __init__(self, data: pd.DataFrame, asset: str, bet_sizing: BetSizingStrategy, bet_sizing_method: BetSizingMethod, rolling_window=10):
         self.data = data
+        self.rolling_metrics = RollingMetrics(window_size=rolling_window)
         self.asset = Asset(asset)
         self.bet_sizing = bet_sizing
         self.bet_sizing_method = bet_sizing_method
@@ -119,19 +122,22 @@ class TradingStrategy:
         available_cash = self._get_session_available_cash(session)
 
         # Extract all needed features from self.data (safe access)
-        feature_cols = ['atr_14', 'ma_14', 'min_price_30', 'max_price_30']
+        price_features = ["ma_14", "min_price_30", "max_price_30", "atr_14"]
         context = {}
+
         if entry_time in self.data.index:
-            for col in feature_cols:
+            for col in price_features:
                 context[col] = self.data.at[entry_time, col]
         else:
-            for col in feature_cols:
+            for col in price_features:
                 context[col] = None  # fallback for missing
 
         # Add trade-specific info to context
         context.update({
             "attempt": attempt,
-            "ref_close": ref_close
+            "ref_close": ref_close,
+            "eval_f1": self.rolling_metrics.latest().get("rolling_f1"),
+            "eval_precision": self.rolling_metrics.latest().get("rolling_precision")
         })
 
         # Call the bet sizing strategy
@@ -343,6 +349,26 @@ class TradingStrategy:
             price_diff = -price_diff
         gross_pnl = price_diff * trade.setup.position_size
         trade.pnl = gross_pnl
+
+        # === Directional Prediction Evaluation ===
+        y_pred = 1 if trade.setup.direction == 'long' else 0
+
+        if trade.pnl is not None:
+            if trade.setup.direction == 'long':
+                y_true = 1 if trade.pnl > 0 else 0
+            else:
+                y_true = 1 if trade.pnl <= 0 else 0
+
+            self.rolling_metrics.update(y_true, y_pred)
+
+            if hasattr(trade, "evaluation"):
+                trade.evaluation.update(self.rolling_metrics.latest())
+            else:
+                trade.evaluation = self.rolling_metrics.latest()
+        
+            trade.y_true = y_true
+            trade.y_pred = y_pred
+
         self.session_capital[trade.session] += trade.pnl
         if hasattr(self.bet_sizing, "update_with_trade_result"):
             try:
@@ -384,7 +410,14 @@ class TradingStrategy:
                 'atr_14': t.setup.atr_14,
                 'ma_14': t.setup.ma_14,
                 'min_price_30': t.setup.min_price_30,
-                'max_price_30': t.setup.max_price_30
+                'max_price_30': t.setup.max_price_30,
+                'y_true': getattr(t, 'y_true', None),
+                'y_pred': getattr(t, 'y_pred', None),
+                'eval_accuracy': getattr(t, 'evaluation', {}).get('rolling_accuracy', None),
+                'eval_f1': getattr(t, 'evaluation', {}).get('rolling_f1', None),
+                'eval_precision': getattr(t, 'evaluation', {}).get('rolling_precision', None),
+                'eval_recall': getattr(t, 'evaluation', {}).get('rolling_recall', None),
+
 
             } for t in session_trades])
             
@@ -429,7 +462,48 @@ def get_bet_sizing(method: BetSizingMethod, past_returns: pd.Series = None) -> B
         return PercentVolatilityBetSizing(risk_fraction=0.01)
     elif method == BetSizingMethod.OPTIMAL_F:
         return OptimalF(min_trades=20, default_fraction=0.01)
-    elif method == BetSizingMethod.Optimal_F2:
-        return OptimalF2(min_trades=20, default_fraction=0.01)
     else:
         raise ValueError(f"Unsupported bet sizing method: {method}")
+
+
+
+class RollingMetrics:
+    def __init__(self, window_size=10):
+        self.window_size = window_size
+        self.y_true = deque(maxlen=window_size)
+        self.y_pred = deque(maxlen=window_size)
+        self.rolling_accuracy = []
+        self.rolling_f1 = []
+        self.rolling_precision = []
+        self.rolling_recall = []
+
+    def update(self, y_true_val, y_pred_val):
+        self.y_true.append(y_true_val)
+        self.y_pred.append(y_pred_val)
+
+        if len(self.y_pred) == self.window_size:
+            print(f"\n📊 Rolling Window Debug (last {self.window_size} trades):")
+            print(f"  y_true counts: {np.bincount(self.y_true)}")
+            print(f"  y_pred counts: {np.bincount(self.y_pred)}")
+
+        if len(self.y_true) == self.window_size:
+            self.rolling_accuracy.append(accuracy_score(self.y_true, self.y_pred))
+            self.rolling_precision.append(precision_score(self.y_true, self.y_pred, zero_division=0))
+            self.rolling_recall.append(recall_score(self.y_true, self.y_pred, zero_division=0))
+            self.rolling_f1.append(f1_score(self.y_true, self.y_pred, zero_division=0))
+        else:
+            self.rolling_accuracy.append(None)
+            self.rolling_f1.append(None)
+            self.rolling_precision.append(None)
+            self.rolling_recall.append(None)
+
+    def latest(self):
+        def safe_get(lst):
+            return lst[-1] if lst else None
+
+        return {
+            "rolling_accuracy": safe_get(self.rolling_accuracy),
+            "rolling_f1": safe_get(self.rolling_f1),
+            "rolling_precision": safe_get(self.rolling_precision),
+            "rolling_recall": safe_get(self.rolling_recall)
+        }
