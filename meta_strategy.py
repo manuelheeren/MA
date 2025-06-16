@@ -16,15 +16,24 @@ class MetaLabelingStrategy(TradingStrategy):
         current_equity = self._get_session_equity(session, price)
         available_cash = self._get_session_available_cash(session)
 
+        metrics = self.rolling_metrics[session].latest()
+
+        session_map = {'asian': 0, 'london': 1, 'us': 2}
+        session_code = session_map.get(session, -1)
+
         context = {
         "attempt": attempt,
         "ref_close": ref_close,
         "duration_minutes": 0,
         "session": session,
-        "eval_f1": self.rolling_metrics.latest().get("rolling_f1")
-    }
-        print(f"✅ [MetaStrategy] At {entry_time}, eval_f1 = {context['eval_f1']}")
-
+        "eval_f1": metrics.get("rolling_f1"),
+        "eval_accuracy": metrics.get("rolling_accuracy"),
+        "eval_precision": metrics.get("rolling_precision"),
+        "eval_recall": metrics.get("rolling_recall"),
+        "n_total_seen": metrics.get("n_total_seen"),
+        "n_window_obs": metrics.get("n_window_obs"),
+        "session_code": session_code,
+        }
 
         # FIX: Add feature columns into context just like base strategy
         feature_cols = ['atr_14', 'ma_14', 'min_price_30', 'max_price_30']
@@ -69,11 +78,12 @@ class MetaLabelingStrategy(TradingStrategy):
 
         # Meta-model filter
         if hasattr(self, 'rolling_metrics'):
-            metrics = self.rolling_metrics.latest()
+            metrics = self.rolling_metrics[session].latest()
             if all(v is not None for v in metrics.values()):  # only inject if window is filled
                 for key, value in metrics.items():
                     context[key] = value
-                print(f"🧠 Rolling metrics injected at {entry_time}: {metrics}")
+                print(f"🧠 Rolling metrics injected at {entry_time} ({session}): {metrics}")
+
 
         if self.meta_model_handler:
             approved = self.meta_model_handler.is_trade_approved(context, direction)

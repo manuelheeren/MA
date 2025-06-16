@@ -84,12 +84,18 @@ class TradingStrategy:
         SessionTime('us', time(13, 0), time(21, 0), time(20, 59))
     ]
 
+    SESSION_MAP = {'asian': 0, 'london': 1, 'us': 2}
+
     MAX_ATTEMPTS = 3
     INITIAL_CAPITAL = 100000
 
     def __init__(self, data: pd.DataFrame, asset: str, bet_sizing: BetSizingStrategy, bet_sizing_method: BetSizingMethod, rolling_window=10):
         self.data = data
-        self.rolling_metrics = RollingMetrics(window_size=rolling_window)
+        self.rolling_metrics = {
+            'asian': RollingMetrics(window_size=rolling_window),
+            'london': RollingMetrics(window_size=rolling_window),
+            'us': RollingMetrics(window_size=rolling_window)
+        }
         self.asset = Asset(asset)
         self.bet_sizing = bet_sizing
         self.bet_sizing_method = bet_sizing_method
@@ -133,11 +139,23 @@ class TradingStrategy:
                 context[col] = None  # fallback for missing
 
         # Add trade-specific info to context
+        metrics = self.rolling_metrics[session].latest()
+
+        session_map = {'asian': 0, 'london': 1, 'us': 2}
+        session_code = session_map.get(session, -1)
+
         context.update({
             "attempt": attempt,
             "ref_close": ref_close,
-            "eval_f1": self.rolling_metrics.latest().get("rolling_f1"),
-            "eval_precision": self.rolling_metrics.latest().get("rolling_precision")
+            "duration_minutes": 0,
+            "session": session,
+            "eval_f1": metrics.get("rolling_f1"),
+            "eval_accuracy": metrics.get("rolling_accuracy"),
+            "eval_precision": metrics.get("rolling_precision"),
+            "eval_recall": metrics.get("rolling_recall"),
+            "n_total_seen": metrics.get("n_total_seen"),
+            "n_window_obs": metrics.get("n_window_obs"),
+            "session_code": session_code,
         })
 
         # Call the bet sizing strategy
@@ -359,15 +377,18 @@ class TradingStrategy:
             else:
                 y_true = 1 if trade.pnl <= 0 else 0
 
-            self.rolling_metrics.update(y_true, y_pred)
+        session = trade.session
+        self.rolling_metrics[session].update(y_true, y_pred)
 
-            if hasattr(trade, "evaluation"):
-                trade.evaluation.update(self.rolling_metrics.latest())
-            else:
-                trade.evaluation = self.rolling_metrics.latest()
-        
-            trade.y_true = y_true
-            trade.y_pred = y_pred
+        # Save the latest metrics to the trade (for logging/export)
+        metrics = self.rolling_metrics[session].latest()
+        if hasattr(trade, "evaluation"):
+            trade.evaluation.update(metrics)
+        else:
+            trade.evaluation = metrics
+
+        trade.y_true = y_true
+        trade.y_pred = y_pred
 
         self.session_capital[trade.session] += trade.pnl
         if hasattr(self.bet_sizing, "update_with_trade_result"):
@@ -417,6 +438,9 @@ class TradingStrategy:
                 'eval_f1': getattr(t, 'evaluation', {}).get('rolling_f1', None),
                 'eval_precision': getattr(t, 'evaluation', {}).get('rolling_precision', None),
                 'eval_recall': getattr(t, 'evaluation', {}).get('rolling_recall', None),
+                'n_total_seen': getattr(t, 'evaluation', {}).get('n_total_seen', None),
+                'n_window_obs': getattr(t, 'evaluation', {}).get('n_window_obs', None),
+                'session_code': self.SESSION_MAP.get(t.session, -1)
 
 
             } for t in session_trades])
@@ -468,7 +492,7 @@ def get_bet_sizing(method: BetSizingMethod, past_returns: pd.Series = None) -> B
 
 
 class RollingMetrics:
-    def __init__(self, window_size=10):
+    def __init__(self, window_size=7):
         self.window_size = window_size
         self.y_true = deque(maxlen=window_size)
         self.y_pred = deque(maxlen=window_size)
@@ -476,26 +500,29 @@ class RollingMetrics:
         self.rolling_f1 = []
         self.rolling_precision = []
         self.rolling_recall = []
+        self.total_seen = 0
 
     def update(self, y_true_val, y_pred_val):
         self.y_true.append(y_true_val)
         self.y_pred.append(y_pred_val)
+        self.total_seen += 1
+
 
         if len(self.y_pred) == self.window_size:
             print(f"\n📊 Rolling Window Debug (last {self.window_size} trades):")
             print(f"  y_true counts: {np.bincount(self.y_true)}")
             print(f"  y_pred counts: {np.bincount(self.y_pred)}")
-
-        if len(self.y_true) == self.window_size:
+        
+        if len(self.y_true) > 0:
             self.rolling_accuracy.append(accuracy_score(self.y_true, self.y_pred))
             self.rolling_precision.append(precision_score(self.y_true, self.y_pred, zero_division=0))
             self.rolling_recall.append(recall_score(self.y_true, self.y_pred, zero_division=0))
             self.rolling_f1.append(f1_score(self.y_true, self.y_pred, zero_division=0))
         else:
             self.rolling_accuracy.append(None)
-            self.rolling_f1.append(None)
             self.rolling_precision.append(None)
             self.rolling_recall.append(None)
+            self.rolling_f1.append(None)
 
     def latest(self):
         def safe_get(lst):
@@ -505,5 +532,7 @@ class RollingMetrics:
             "rolling_accuracy": safe_get(self.rolling_accuracy),
             "rolling_f1": safe_get(self.rolling_f1),
             "rolling_precision": safe_get(self.rolling_precision),
-            "rolling_recall": safe_get(self.rolling_recall)
+            "rolling_recall": safe_get(self.rolling_recall),
+            "n_total_seen": self.total_seen,
+            "n_window_obs": len(self.y_true) 
         }
