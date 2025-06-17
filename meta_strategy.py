@@ -85,12 +85,28 @@ class MetaLabelingStrategy(TradingStrategy):
                 print(f"🧠 Rolling metrics injected at {entry_time} ({session}): {metrics}")
 
 
-        if self.meta_model_handler:
+        """if self.meta_model_handler:
             approved = self.meta_model_handler.is_trade_approved(context, direction)
             if not approved:
                 print(f"[SKIP] Trade at {entry_time} rejected by meta model")
                 self.rejected_trades += 1
-                return None
+                return None"""
+
+        # Meta-model filter (only apply if rolling window is mature enough)
+        if hasattr(self, 'rolling_metrics'):
+            metrics = self.rolling_metrics[session].latest()
+
+            # 🔍 Check if the rolling window is filled
+            if metrics.get("n_window_obs", 0) < self.rolling_metrics[session].window_size:
+                print(f"🟡 Waving through trade at {entry_time} — rolling window not full yet.")
+            elif self.meta_model_handler:
+                # ✅ Apply the meta model only if window is filled
+                approved = self.meta_model_handler.is_trade_approved(context, direction)
+                if not approved:
+                    print(f"[SKIP] Trade at {entry_time} rejected by meta model")
+                    self.rejected_trades += 1
+                    return None
+
 
         # Build TradeSetup
         return TradeSetup(
