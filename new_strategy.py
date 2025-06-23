@@ -89,7 +89,7 @@ class TradingStrategy:
     MAX_ATTEMPTS = 3
     INITIAL_CAPITAL = 100000
 
-    def __init__(self, data: pd.DataFrame, asset: str, bet_sizing: BetSizingStrategy, bet_sizing_method: BetSizingMethod, rolling_window=10):
+    def __init__(self, data: pd.DataFrame, asset: str, bet_sizing: BetSizingStrategy, bet_sizing_method: BetSizingMethod, rolling_window=30):
         self.data = data
         self.rolling_metrics = {
             'asian': RollingMetrics(window_size=rolling_window),
@@ -149,10 +149,10 @@ class TradingStrategy:
             "ref_close": ref_close,
             "duration_minutes": 0,
             "session": session,
-            "eval_f1": metrics.get("rolling_f1"),
-            "eval_accuracy": metrics.get("rolling_accuracy"),
-            "eval_precision": metrics.get("rolling_precision"),
-            "eval_recall": metrics.get("rolling_recall"),
+            "rolling_f1": metrics.get("rolling_f1"),
+            "rolling_accuracy": metrics.get("rolling_accuracy"),
+            "rolling_precision": metrics.get("rolling_precision"),
+            "rolling_recall": metrics.get("rolling_recall"),
             "n_total_seen": metrics.get("n_total_seen"),
             "n_window_obs": metrics.get("n_window_obs"),
             "session_code": session_code,
@@ -434,10 +434,10 @@ class TradingStrategy:
                 'max_price_30': t.setup.max_price_30,
                 'y_true': getattr(t, 'y_true', None),
                 'y_pred': getattr(t, 'y_pred', None),
-                'eval_accuracy': getattr(t, 'evaluation', {}).get('rolling_accuracy', None),
-                'eval_f1': getattr(t, 'evaluation', {}).get('rolling_f1', None),
-                'eval_precision': getattr(t, 'evaluation', {}).get('rolling_precision', None),
-                'eval_recall': getattr(t, 'evaluation', {}).get('rolling_recall', None),
+                'rolling_accuracy': getattr(t, 'evaluation', {}).get('rolling_accuracy', None),
+                'rolling_f1': getattr(t, 'evaluation', {}).get('rolling_f1', None),
+                'rolling_precision': getattr(t, 'evaluation', {}).get('rolling_precision', None),
+                'rolling_recall': getattr(t, 'evaluation', {}).get('rolling_recall', None),
                 'n_total_seen': getattr(t, 'evaluation', {}).get('n_total_seen', None),
                 'n_window_obs': getattr(t, 'evaluation', {}).get('n_window_obs', None),
                 'session_code': self.SESSION_MAP.get(t.session, -1)
@@ -492,7 +492,7 @@ def get_bet_sizing(method: BetSizingMethod, past_returns: pd.Series = None) -> B
 
 
 class RollingMetrics:
-    def __init__(self, window_size=7):
+    def __init__(self, window_size=30):
         self.window_size = window_size
         self.y_true = deque(maxlen=window_size)
         self.y_pred = deque(maxlen=window_size)
