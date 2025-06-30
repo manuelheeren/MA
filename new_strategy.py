@@ -440,8 +440,9 @@ class TradingStrategy:
                 'rolling_recall': getattr(t, 'evaluation', {}).get('rolling_recall', None),
                 'n_total_seen': getattr(t, 'evaluation', {}).get('n_total_seen', None),
                 'n_window_obs': getattr(t, 'evaluation', {}).get('n_window_obs', None),
-                'session_code': self.SESSION_MAP.get(t.session, -1)
-
+                'session_code': self.SESSION_MAP.get(t.session, -1),
+                'regime': self.data.at[t.entry_time, 'regime'] if t.entry_time in self.data.index else None,
+                'regime_label': self.data.at[t.entry_time, 'regime_label'] if t.entry_time in self.data.index else None,
 
             } for t in session_trades])
             
