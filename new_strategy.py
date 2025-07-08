@@ -128,7 +128,7 @@ class TradingStrategy:
         available_cash = self._get_session_available_cash(session)
 
         # Extract all needed features from self.data (safe access)
-        price_features = ["ma_14", "min_price_30", "max_price_30", "atr_14"]
+        price_features = ["ma_14", "min_price_30", "max_price_30", "atr_14","daily_return","daily_volatility","t10yie","vix_close"]
         context = {}
 
         if entry_time in self.data.index:
@@ -443,6 +443,11 @@ class TradingStrategy:
                 'session_code': self.SESSION_MAP.get(t.session, -1),
                 'regime': self.data.at[t.entry_time, 'regime'] if t.entry_time in self.data.index else None,
                 'regime_label': self.data.at[t.entry_time, 'regime_label'] if t.entry_time in self.data.index else None,
+                'daily_return': self.data.at[t.entry_time, 'daily_return'] if t.entry_time in self.data.index else None,
+                'daily_volatility': self.data.at[t.entry_time, 'daily_volatility'] if t.entry_time in self.data.index else None,
+                't10yie': self.data.at[t.entry_time, 't10yie'] if t.entry_time in self.data.index else None,
+                'vix_close': self.data.at[t.entry_time, 'vix_close'] if t.entry_time in self.data.index else None,
+
 
             } for t in session_trades])
             
