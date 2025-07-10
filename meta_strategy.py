@@ -36,7 +36,7 @@ class MetaLabelingStrategy(TradingStrategy):
         }
 
         # FIX: Add feature columns into context just like base strategy
-        feature_cols = ['atr_14', 'ma_14', 'min_price_30', 'max_price_30']
+        feature_cols = ['atr_14', 'ma_14', 'min_price_30', 'max_price_30','daily_return', 'daily_volatility', 't10yie', 'vix_close',"day_of_week", "hour_of_day","dgs10","avg_return_30d","drawdown_30"]
         if entry_time in self.data.index:
             for col in feature_cols:
                 context[col] = self.data.at[entry_time, col]
@@ -143,6 +143,9 @@ class MetaLabelingStrategy(TradingStrategy):
             else:
                 # ✅ Apply meta-model when metrics are ready
                 if self.meta_model_handler:
+                    print(f"\n🧠 Meta Model Context Check ({entry_time}, {session}):")
+                    for k, v in context.items():
+                        print(f"  {k}: {v}")
                     approved = self.meta_model_handler.is_trade_approved(context, direction)
                     if not approved:
                         print(f"[SKIP] Trade at {entry_time} rejected by meta model")

@@ -128,7 +128,7 @@ class TradingStrategy:
         available_cash = self._get_session_available_cash(session)
 
         # Extract all needed features from self.data (safe access)
-        price_features = ["ma_14", "min_price_30", "max_price_30", "atr_14","daily_return","daily_volatility","t10yie","vix_close"]
+        price_features = ["ma_14", "min_price_30", "max_price_30", "atr_14","daily_return","daily_volatility","t10yie","vix_close","day_of_week", "hour_of_day","dgs10","avg_return_30d","drawdown_30"]
         context = {}
 
         if entry_time in self.data.index:
@@ -425,7 +425,7 @@ class TradingStrategy:
                 'holding_time': t.holding_time,
                 'ref_close': t.setup.ref_close,
                 'date': t.entry_time.date(),
-                'day_of_week': t.entry_time.day_name(),
+                'day_of_week': self.data.at[t.entry_time, 'day_of_week'] if t.entry_time in self.data.index else None,
                 'equity_at_entry': t.equity_at_entry,
                 'duration_minutes': (t.exit_time - t.entry_time).total_seconds() / 60 if t.exit_time else None,
                 'atr_14': t.setup.atr_14,
@@ -447,7 +447,10 @@ class TradingStrategy:
                 'daily_volatility': self.data.at[t.entry_time, 'daily_volatility'] if t.entry_time in self.data.index else None,
                 't10yie': self.data.at[t.entry_time, 't10yie'] if t.entry_time in self.data.index else None,
                 'vix_close': self.data.at[t.entry_time, 'vix_close'] if t.entry_time in self.data.index else None,
-
+                'hour_of_day': self.data.at[t.entry_time, 'hour_of_day'] if t.entry_time in self.data.index else None,
+                'dgs10': self.data.at[t.entry_time, 'dgs10'] if t.entry_time in self.data.index else None,
+                'avg_return_30d': self.data.at[t.entry_time, 'avg_return_30d'] if t.entry_time in self.data.index else None,
+                'drawdown_30': self.data.at[t.entry_time, 'drawdown_30'] if t.entry_time in self.data.index else None
 
             } for t in session_trades])
             
