@@ -286,3 +286,35 @@
   Bear: Trades = 448, Avg PnL = 3.80, Total PnL = 1702.10, Win Rate = 47.99%
   Bull: Trades = 466, Avg PnL = -0.92, Total PnL = -429.80, Win Rate = 49.14%
   Neutral: Trades = 567, Avg PnL = 6.17, Total PnL = 3499.12, Win Rate = 52.20%
+
+
+=== Regime Analysis ===
+
+🔹 Baseline Strategy:
+  Bear: Trades = 448, Avg PnL = 3.80, Total PnL = 1702.10, Win Rate = 47.99%
+  Bull: Trades = 466, Avg PnL = -0.92, Total PnL = -429.80, Win Rate = 49.14%
+  Neutral: Trades = 567, Avg PnL = 6.17, Total PnL = 3499.12, Win Rate = 52.20%
+
+
+=== Regime Analysis ===
+
+🔹 Baseline Strategy:
+  Bear: Trades = 448, Avg PnL = 3.80, Total PnL = 1702.10, Win Rate = 47.99%
+  Bull: Trades = 466, Avg PnL = -0.92, Total PnL = -429.80, Win Rate = 49.14%
+  Neutral: Trades = 567, Avg PnL = 6.17, Total PnL = 3499.12, Win Rate = 52.20%
+
+
+=== Regime Analysis ===
+
+🔹 Baseline Strategy:
+  Bear: Trades = 448, Avg PnL = 3.80, Total PnL = 1702.10, Win Rate = 47.99%
+  Bull: Trades = 466, Avg PnL = -0.92, Total PnL = -429.80, Win Rate = 49.14%
+  Neutral: Trades = 567, Avg PnL = 6.17, Total PnL = 3499.12, Win Rate = 52.20%
+
+
+=== Regime Analysis ===
+
+🔹 Baseline Strategy:
+  Bear: Trades = 448, Avg PnL = 3.80, Total PnL = 1702.10, Win Rate = 47.99%
+  Bull: Trades = 466, Avg PnL = -0.92, Total PnL = -429.80, Win Rate = 49.14%
+  Neutral: Trades = 567, Avg PnL = 6.17, Total PnL = 3499.12, Win Rate = 52.20%
