@@ -1,0 +1,107 @@
+
+=== COTTON Backtest Results ===
+Bet Sizing Strategy: fixedfractionalbetsizing
+
+Period: 2023-07-04 to 2024-12-31
+
+ASIAN Session Performance:
+Initial Capital: $100,000.00
+Final Capital: $93,950.28
+Total PnL: $-6,049.72
+Return: -6.05%
+Win Rate: 44.96% (272W/333L)
+Max Drawdown: 6.89%
+Sharpe Ratio: -1.92
+Skewness: 0.298
+Excess Kurtosis: -1.315
+
+Attempt Analysis:
+
+  Attempt 1:
+  Trades: 391 (64.6% of session trades)
+  PnL: $-3,512.37
+  Win Rate: 43.99% (172W/219L)
+  Average Win: $75.76
+  Average Loss: $-83.13
+
+  Attempt 2:
+  Trades: 154 (25.5% of session trades)
+  PnL: $-1,943.28
+  Win Rate: 47.40% (73W/81L)
+  Average Win: $62.63
+  Average Loss: $-80.43
+
+  Attempt 3:
+  Trades: 60 (9.9% of session trades)
+  PnL: $-594.07
+  Win Rate: 45.00% (27W/33L)
+  Average Win: $62.69
+  Average Loss: $-69.30
+
+LONDON Session Performance:
+Initial Capital: $100,000.00
+Final Capital: $106,431.26
+Total PnL: $6,431.26
+Return: 6.43%
+Win Rate: 50.16% (313W/311L)
+Max Drawdown: 2.02%
+Sharpe Ratio: 1.49
+Skewness: 0.263
+Excess Kurtosis: -1.271
+
+Attempt Analysis:
+
+  Attempt 1:
+  Trades: 391 (62.7% of session trades)
+  PnL: $5,725.48
+  Win Rate: 54.99% (215W/176L)
+  Average Win: $102.56
+  Average Loss: $-100.77
+
+  Attempt 2:
+  Trades: 155 (24.8% of session trades)
+  PnL: $1,080.30
+  Win Rate: 43.87% (68W/87L)
+  Average Win: $138.99
+  Average Loss: $-96.22
+
+  Attempt 3:
+  Trades: 78 (12.5% of session trades)
+  PnL: $-374.53
+  Win Rate: 38.46% (30W/48L)
+  Average Win: $129.25
+  Average Loss: $-88.58
+
+US Session Performance:
+Initial Capital: $100,000.00
+Final Capital: $100,862.56
+Total PnL: $862.56
+Return: 0.86%
+Win Rate: 45.55% (297W/355L)
+Max Drawdown: 1.71%
+Sharpe Ratio: 0.21
+Skewness: 0.452
+Excess Kurtosis: -1.077
+
+Attempt Analysis:
+
+  Attempt 1:
+  Trades: 391 (60.0% of session trades)
+  PnL: $217.89
+  Win Rate: 48.34% (189W/202L)
+  Average Win: $98.41
+  Average Loss: $-97.77
+
+  Attempt 2:
+  Trades: 179 (27.5% of session trades)
+  PnL: $467.94
+  Win Rate: 41.90% (75W/104L)
+  Average Win: $126.00
+  Average Loss: $-86.37
+
+  Attempt 3:
+  Trades: 82 (12.6% of session trades)
+  PnL: $176.73
+  Win Rate: 40.24% (33W/49L)
+  Average Win: $132.84
+  Average Loss: $-85.86

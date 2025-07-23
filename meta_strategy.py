@@ -36,7 +36,7 @@ class MetaLabelingStrategy(TradingStrategy):
         }
 
         # FIX: Add feature columns into context just like base strategy
-        feature_cols = ['atr_14', 'ma_14', 'min_price_30', 'max_price_30','daily_return', 'daily_volatility', 't10yie', 'vix_close',"day_of_week", "hour_of_day","dgs10","avg_return_30d","drawdown_30"]
+        feature_cols = ['atr_14', 'ma_14', 'min_price_30', 'max_price_30','daily_return', 'daily_volatility', 't10yie', 'vix_close',"day_of_week", "hour_of_day","dgs10","avg_return_30d","drawdown_30",'close', 'drawdown_static', 'high', 'daily_low', 'week_number', 'max_price_14', 'true_range', 'daily_high', 'low', 'volume', 'dtwexbgs', 'open', 'min_price_14', 'cpiaucsl', 'daily_close']
         if entry_time in self.data.index:
             for col in feature_cols:
                 context[col] = self.data.at[entry_time, col]
