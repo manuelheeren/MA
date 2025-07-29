@@ -36,7 +36,7 @@ class MetaLabelingStrategy(TradingStrategy):
         }
 
         # FIX: Add feature columns into context just like base strategy
-        feature_cols = ['atr_14', 'ma_14', 'min_price_30', 'max_price_30','daily_return', 'daily_volatility', 't10yie', 'vix_close',"day_of_week", "hour_of_day","dgs10","avg_return_30d","drawdown_30",'close', 'drawdown_static', 'high', 'daily_low', 'week_number', 'max_price_14', 'true_range', 'daily_high', 'low', 'volume', 'dtwexbgs', 'open', 'min_price_14', 'cpiaucsl', 'daily_close']
+        feature_cols = ['atr_14', 'ma_14', 'min_price_30', 'max_price_30','daily_return', 'daily_volatility', 't10yie', 'vix_close',"day_of_week", "hour_of_day","dgs10","avg_return_30d","drawdown_30",'close', 'drawdown_static', 'high', 'daily_low', 'week_number', 'max_price_14', 'true_range', 'daily_high', 'low', 'volume', 'dtwexbgs', 'open', 'min_price_14', 'cpiaucsl', 'daily_close','volume_shifted']
         if entry_time in self.data.index:
             for col in feature_cols:
                 context[col] = self.data.at[entry_time, col]
@@ -75,59 +75,7 @@ class MetaLabelingStrategy(TradingStrategy):
 
         # Merge enriched context back in
         context.update(enriched_context)
-
-        """ # Meta-model filter
-        if hasattr(self, 'rolling_metrics'):
-            metrics = self.rolling_metrics[session].latest()
-            if all(v is not None for v in metrics.values()):  # only inject if window is filled
-                for key, value in metrics.items():
-                    context[key] = value
-                print(f"🧠 Rolling metrics injected at {entry_time} ({session}): {metrics}")"""
-
-        """""
-        if self.meta_model_handler:
-            approved = self.meta_model_handler.is_trade_approved(context, direction)
-            if not approved:
-                print(f"[SKIP] Trade at {entry_time} rejected by meta model")
-                self.rejected_trades += 1
-                return None"""
-
         
-        """# Meta-model filter (only apply if rolling window is mature enough)
-        if hasattr(self, 'rolling_metrics'):
-            metrics = self.rolling_metrics[session].latest()
-
-            # 🔍 Check if the rolling window is filled
-            if metrics.get("n_window_obs", 0) < self.rolling_metrics[session].window_size:
-                print(f"🟡 Waving through trade at {entry_time} — rolling window not full yet.")
-            elif self.meta_model_handler:
-                # ✅ Apply the meta model only if window is filled
-                approved = self.meta_model_handler.is_trade_approved(context, direction)
-                if not approved:
-                    print(f"[SKIP] Trade at {entry_time} rejected by meta model")
-                    self.rejected_trades += 1
-                    return None"""
-        
-        # Meta-model filter (only apply if rolling window is mature enough)
-        """if hasattr(self, 'rolling_metrics'):
-            metrics = self.rolling_metrics[session].latest()
-
-            # 🔍 Check if the rolling window is filled
-            if metrics.get("n_window_obs", 0) < self.rolling_metrics[session].window_size:
-                print(f"🟡 Waving through trade at {entry_time} — rolling window not full yet.")
-            else:
-                # ✅ Inject metrics into context before using them
-                for key, value in metrics.items():
-                    context[key] = value
-
-                if self.meta_model_handler:
-                    approved = self.meta_model_handler.is_trade_approved(context, direction)
-                    if not approved:
-                        print(f"[SKIP] Trade at {entry_time} rejected by meta model")
-                        self.rejected_trades += 1
-                        return None"""
-        
-        # Meta-model filter (force application even if rolling window not full)
         # Meta-model filter
         if hasattr(self, 'rolling_metrics'):
             metrics = self.rolling_metrics[session].latest()
