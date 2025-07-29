@@ -142,7 +142,7 @@ class TradingStrategy:
         available_cash = self._get_session_available_cash(session)
 
         # Extract all needed features from self.data (safe access)
-        price_features = ["ma_14", "min_price_30", "max_price_30", "atr_14","daily_return","daily_volatility","t10yie","vix_close","day_of_week", "hour_of_day","dgs10","avg_return_30d","drawdown_30",'close', 'drawdown_static', 'high', 'daily_low', 'week_number', 'max_price_14', 'true_range', 'daily_high', 'low', 'volume', 'dtwexbgs', 'open', 'min_price_14', 'cpiaucsl', 'daily_close']
+        price_features = ["ma_14", "min_price_30", "max_price_30", "atr_14","daily_return","daily_volatility","t10yie","vix_close","day_of_week", "hour_of_day","dgs10","avg_return_30d","drawdown_30",'close', 'drawdown_static', 'high', 'daily_low', 'week_number', 'max_price_14', 'true_range', 'daily_high', 'low', 'volume', 'dtwexbgs', 'open', 'min_price_14', 'cpiaucsl', 'daily_close','volume_shifted']
         context = {}
 
         if entry_time in self.data.index:
@@ -480,6 +480,8 @@ class TradingStrategy:
                 'min_price_14': self.data.at[t.entry_time, 'min_price_14'] if t.entry_time in self.data.index else None,
                 'cpiaucsl': self.data.at[t.entry_time, 'cpiaucsl'] if t.entry_time in self.data.index else None,
                 'daily_close': self.data.at[t.entry_time, 'daily_close'] if t.entry_time in self.data.index else None,
+                'volume_shifted': self.data.at[t.entry_time, 'volume_shifted'] if t.entry_time in self.data.index else None,
+
 
 
             } for t in session_trades])
