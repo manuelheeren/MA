@@ -1,0 +1,31 @@
+Top 30 Most Important Features for Short Trades
+         feature  mean_abs_shap_value
+         attempt             0.240615
+            open             0.215924
+  volume_shifted             0.201573
+    daily_return             0.177349
+      rolling_f1             0.165820
+daily_volatility             0.152151
+     hour_of_day             0.149005
+      true_range             0.148018
+  avg_return_30d             0.144398
+     drawdown_30             0.141808
+        dtwexbgs             0.141143
+       vix_close             0.129762
+rolling_accuracy             0.124194
+          atr_14             0.103667
+    n_total_seen             0.097370
+           dgs10             0.089262
+ drawdown_static             0.087846
+          t10yie             0.082300
+     day_of_week             0.071069
+      daily_high             0.070314
+       daily_low             0.065283
+     week_number             0.064726
+    min_price_14             0.063914
+           ma_14             0.059455
+    max_price_14             0.051612
+     daily_close             0.036328
+        cpiaucsl             0.024186
+    session_code             0.018748
+    n_window_obs             0.000000

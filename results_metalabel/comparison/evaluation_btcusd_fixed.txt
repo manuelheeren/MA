@@ -85,80 +85,80 @@
 📈 Meta-Filtered Backtest Summary (Per Session Evaluation)
 
 🔹 Session: asian
-  Final Capital: $100,632.53
-  Total PnL:     $632.53
-  Win Rate:      48.15% (143W / 154L)
-  Max Drawdown:  2.87%
-  Sharpe Ratio:  0.27
-  Total Trades:  297
+  Final Capital: $100,743.83
+  Total PnL:     $743.83
+  Win Rate:      47.54% (174W / 192L)
+  Max Drawdown:  2.32%
+  Sharpe Ratio:  0.26
+  Total Trades:  366
 
 🔹 Session: london
-  Final Capital: $103,966.21
-  Total PnL:     $3,966.21
-  Win Rate:      50.98% (130W / 125L)
-  Max Drawdown:  0.70%
-  Sharpe Ratio:  2.11
-  Total Trades:  255
+  Final Capital: $104,965.72
+  Total PnL:     $4,965.72
+  Win Rate:      49.72% (175W / 177L)
+  Max Drawdown:  1.34%
+  Sharpe Ratio:  1.88
+  Total Trades:  352
 
 🔹 Session: us
-  Final Capital: $104,697.33
-  Total PnL:     $4,697.33
-  Win Rate:      52.96% (134W / 119L)
-  Max Drawdown:  1.49%
-  Sharpe Ratio:  2.42
-  Total Trades:  253
+  Final Capital: $104,042.03
+  Total PnL:     $4,042.03
+  Win Rate:      49.41% (167W / 171L)
+  Max Drawdown:  1.59%
+  Sharpe Ratio:  1.53
+  Total Trades:  338
 
-📊 Combined PnL across all sessions: $9,296.06
+📊 Combined PnL across all sessions: $9,751.59
 
 📊 Meta-Filtered Regime Breakdown by Session
 
 🔹 Session: asian
   - Regime: Bear
-    Trades:    144
-    Avg PnL:   $0.47
-    Total PnL: $67.90
-    Win Rated:  43.75%
+    Trades:    174
+    Avg PnL:   $-1.43
+    Total PnL: $-248.02
+    Win Rated:  42.53%
   - Regime: Bull
-    Trades:    49
-    Avg PnL:   $5.92
-    Total PnL: $290.22
-    Win Rated:  63.27%
+    Trades:    59
+    Avg PnL:   $12.30
+    Total PnL: $725.69
+    Win Rated:  64.41%
   - Regime: Neutral
-    Trades:    104
-    Avg PnL:   $2.64
-    Total PnL: $274.41
-    Win Rated:  47.12%
+    Trades:    133
+    Avg PnL:   $2.00
+    Total PnL: $266.16
+    Win Rated:  46.62%
 
 🔹 Session: london
   - Regime: Bear
-    Trades:    135
-    Avg PnL:   $8.00
-    Total PnL: $1079.95
-    Win Rated:  45.93%
+    Trades:    156
+    Avg PnL:   $12.32
+    Total PnL: $1921.18
+    Win Rated:  48.08%
   - Regime: Bull
-    Trades:    48
-    Avg PnL:   $13.53
-    Total PnL: $649.32
-    Win Rated:  56.25%
+    Trades:    78
+    Avg PnL:   $-2.54
+    Total PnL: $-198.38
+    Win Rated:  47.44%
   - Regime: Neutral
-    Trades:    72
-    Avg PnL:   $31.07
-    Total PnL: $2236.95
-    Win Rated:  56.94%
+    Trades:    118
+    Avg PnL:   $27.48
+    Total PnL: $3242.92
+    Win Rated:  53.39%
 
 🔹 Session: us
   - Regime: Bear
-    Trades:    112
-    Avg PnL:   $18.26
-    Total PnL: $2045.42
-    Win Rated:  52.68%
+    Trades:    129
+    Avg PnL:   $15.03
+    Total PnL: $1938.41
+    Win Rated:  49.61%
   - Regime: Bull
-    Trades:    52
-    Avg PnL:   $5.39
-    Total PnL: $280.14
-    Win Rated:  51.92%
+    Trades:    72
+    Avg PnL:   $10.55
+    Total PnL: $759.41
+    Win Rated:  54.17%
   - Regime: Neutral
-    Trades:    89
-    Avg PnL:   $26.65
-    Total PnL: $2371.76
-    Win Rated:  53.93%
+    Trades:    137
+    Avg PnL:   $9.81
+    Total PnL: $1344.21
+    Win Rated:  46.72%

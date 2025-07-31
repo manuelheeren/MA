@@ -5,26 +5,33 @@ import numpy as np
 class BetSizingStrategy(Protocol):
     def compute_position(self, capital: float, price: float, stop_loss: float) -> tuple:
         ...
-
-class KellyBetSizing:
-    def __init__(self, window_size: int = 100, fallback_fraction: float = 0.02):
-        """
+"""class KellyBetSizing:
+    def __init__(self, window_size: int = 30, fallback_fraction: float = 0.2):
+        
         Kelly Criterion with cumulative stats (no rolling window after warmup).
 
         :param window_size: Number of initial trades to warm up before using Kelly (e.g., 100).
         :param fallback_fraction: Fraction of capital to bet for the first 100 trades (e.g., 0.02 = 2%).
-        """
+        
         self.window_size = window_size
         self.fallback_fraction = fallback_fraction
-        self.trade_history = []  # Store ALL trades cumulatively
+        self.trade_history_by_session = {}  # Dict: session → list of R-multiples
         self.total_trades_seen = 0
-        self.limit_hits = 0  # Track how often f > 1 was capped
-        self.cash_cap_hits = 0  # Track how often available_cash capped position size
-
-    def update_with_trade_result(self, pnl: float, risk_amount: float = None):
-        """Track the result of each trade (P&L only)."""
+        self.limit_hits = 0
+        self.cash_cap_hits = 0
+       
+    def update_with_trade_result(self, pnl: float, risk_amount: float = None, session: Optional[str] = None):
         self.total_trades_seen += 1
-        self.trade_history.append(pnl)
+
+        if risk_amount is None or risk_amount == 0 or session is None:
+            return  # Optionally count these as skipped trades
+
+        r_multiple = pnl / risk_amount
+
+        if session not in self.trade_history_by_session:
+            self.trade_history_by_session[session] = []
+
+        self.trade_history_by_session[session].append(r_multiple)
 
     def compute_position(
         self,
@@ -32,60 +39,146 @@ class KellyBetSizing:
         price: float,
         stop_loss: float,
         context: Optional[Dict] = None,
-        available_cash: Optional[float] = None
+        available_cash: Optional[float] = None,
+        session: Optional[str] = None
     ) -> tuple:
-        """
-        Bets using fallback for first N trades, then switches to cumulative Kelly Criterion.
-        Caps position size if available_cash is provided.
-        """
-        # === Fallback: Use fixed % risk until we have enough data ===
-        if self.total_trades_seen < self.window_size:
+        if context is None:
+            context = {}
+
+        history = self.trade_history_by_session.get(session, [])
+
+        # === Fallback if insufficient session data ===
+        if len(history) < self.window_size:
             risk_amount = equity * self.fallback_fraction
             position_size = risk_amount / price if price != 0 else 0
-            print(f"[Kelly] (Fallback) equity={equity:.2f}, price={price:.2f}, risk_amount={risk_amount:.2f}")
+            print(f"[Kelly:{session}] (Fallback) equity={equity:.2f}, risk_amount={risk_amount:.2f}")
         else:
-            # === Kelly logic starts here (cumulative stats) ===
-            wins = [p for p in self.trade_history if p > 0]
-            losses = [p for p in self.trade_history if p < 0]
+            wins = [p for p in history if p > 0]
+            losses = [p for p in history if p <= 0]
 
-            p = len(wins) / len(self.trade_history) if self.trade_history else 0
+            p = len(wins) / len(history)
             b1 = np.mean(wins) if wins else 0
-            b2 = abs(np.mean(losses)) if losses else 0  # Keep positive
+            b2 = abs(np.mean(losses)) if losses else 0
 
-            if b1 == 0 or b2 == 0:
-                f = 0.0  # Avoid div by zero
+            denom = b1 * b2
+            if denom == 0:
+                f = 0.0
             else:
-                f = (p * b1 - (1 - p) * b2) / (b1 * b2)
+                f = (p * b1 - (1 - p) * b2) / denom
 
-            # Cap f between 0 and 1
+            # Cap f
+            f_capped = max(0.0, min(f, 1.0))
             if f > 1.0:
                 self.limit_hits += 1
-                f_capped = 1.0
-            elif f < 0:
-                f_capped = 0.0
-            else:
-                f_capped = f
 
             risk_amount = equity * f_capped
             position_size = risk_amount / price if price != 0 else 0
 
-            print(f"[Kelly] equity={equity:.2f}, p={p:.2f}, b1={b1:.2f}, b2={b2:.2f}, "
-                  f"f={f:.4f} (capped={f_capped:.4f}), risk_amount={risk_amount:.2f}")
+            print(f"[Kelly:{session}] p={p:.2f}, b1={b1:.2f}R, b2={b2:.2f}R, f={f:.4f}, capped={f_capped:.4f}")
 
-        # Cap position size if available_cash is provided
+        # Cap position size to available cash
         if available_cash is not None:
-            max_position_size = available_cash / price if price != 0 else 0
-            if position_size > max_position_size:
-                position_size = max_position_size
-                self.cash_cap_hits += 1  # Increment cash cap counter
+            max_pos = available_cash / price if price != 0 else 0
+            if position_size > max_pos:
+                position_size = max_pos
+                self.cash_cap_hits += 1
+        
+        context.update({
+            "ma_14": context.get("ma_14"),
+            "atr_14": context.get("atr_14"),
+            "min_price_30": context.get("min_price_30"),
+            "max_price_30": context.get("max_price_30"),
+            "session": session,
+            "attempt": context.get("attempt"),
+            "ref_close": context.get("ref_close")
+        })
 
-        return position_size, risk_amount
+        return position_size, risk_amount, context"""
 
-    def report_limit_hits(self):
-        """Report how many times f > 1 was capped and how often the cash cap was hit."""
-        print(f"[Kelly] The cap of f > 1 was hit {self.limit_hits} times during the backtest.")
-        print(f"[Kelly] The available cash cap was hit {self.cash_cap_hits} times during the backtest.")
 
+class KellyBetSizing:
+    def __init__(self, window_size: int = 30, fallback_fraction: float = 0.02):
+
+        """
+        Kelly Criterion using cumulative trade statistics (no moving window, no fractional scaling).
+        
+        :param fallback_fraction: Fraction of equity to risk when not enough data
+        :param min_trades: Minimum trades required to compute Kelly
+        """
+        self.fallback_fraction = fallback_fraction
+        self.min_trades = window_size
+        self.trade_history_by_session = {}  # Dict[session: str, List[r-multiples]]
+
+        # Optional diagnostics
+        self.limit_hits = 0
+        self.cash_cap_hits = 0
+
+    def update_with_trade_result(self, pnl: float, risk_amount: Optional[float] = None, session: Optional[str] = None):
+        if risk_amount is None or risk_amount == 0 or session is None:
+            return
+
+        r_multiple = pnl / risk_amount
+
+        if session not in self.trade_history_by_session:
+            self.trade_history_by_session[session] = []
+
+        self.trade_history_by_session[session].append(r_multiple)
+
+    def compute_position(
+        self,
+        equity: float,
+        price: float,
+        stop_loss: float,
+        context: Optional[Dict] = None,
+        available_cash: Optional[float] = None,
+        session: Optional[str] = None
+    ) -> tuple:
+        if context is None:
+            context = {}
+
+        history = self.trade_history_by_session.get(session, [])
+
+        if len(history) < self.min_trades:
+            # Fallback logic
+            risk_amount = equity * self.fallback_fraction
+            print(f"[Kelly:{session}] (Fallback) equity={equity:.2f}, risk={risk_amount:.2f}")
+        else:
+            wins = [r for r in history if r > 0]
+            losses = [r for r in history if r <= 0]
+
+            p = len(wins) / len(history)
+            b1 = np.mean(wins) if wins else 1.0
+            b2 = abs(np.mean(losses)) if losses else 1.0
+
+            denom = b1 * b2
+            f = (p * b1 - (1 - p) * b2) / denom if denom != 0 else 0.0
+            f *= 0.5  # or 0.25
+            f = max(0.0, min(f, 1.0))  # Clamp between 0 and 1
+            risk_amount = equity * f
+
+            print(f"[Kelly:{session}] p={p:.2f}, b1={b1:.2f}, b2={b2:.2f}, f={f:.4f}, risk={risk_amount:.2f}")
+
+        position_size = risk_amount / price if price > 0 else 0.0
+
+        # Cap to available cash if necessary
+        if available_cash is not None and available_cash > 0:
+            max_pos = available_cash / price
+            if position_size > max_pos:
+                position_size = max_pos
+                self.cash_cap_hits += 1
+                print(f"[Kelly:{session}] Position capped to cash limit")
+
+        context.update({
+            "ma_14": context.get("ma_14"),
+            "atr_14": context.get("atr_14"),
+            "min_price_30": context.get("min_price_30"),
+            "max_price_30": context.get("max_price_30"),
+            "session": session,
+            "attempt": context.get("attempt"),
+            "ref_close": context.get("ref_close")
+        })
+
+        return position_size, risk_amount, context
 
 
 class FixedFractionalBetSizing:

@@ -1,0 +1,31 @@
+Top 30 Most Important Features for Long Trades
+         feature  mean_abs_shap_value
+      rolling_f1             0.212254
+  volume_shifted             0.184425
+         attempt             0.179123
+    daily_return             0.166986
+       vix_close             0.159904
+  avg_return_30d             0.158853
+daily_volatility             0.152284
+     hour_of_day             0.139249
+      true_range             0.132390
+            open             0.122757
+           dgs10             0.112027
+rolling_accuracy             0.098059
+        dtwexbgs             0.094993
+     drawdown_30             0.093728
+          atr_14             0.086032
+          t10yie             0.082517
+     week_number             0.076061
+    n_total_seen             0.074440
+           ma_14             0.072677
+ drawdown_static             0.065823
+     day_of_week             0.064269
+       daily_low             0.057923
+     daily_close             0.053663
+      daily_high             0.053456
+    max_price_14             0.040526
+    min_price_14             0.035839
+    session_code             0.018974
+        cpiaucsl             0.018393
+    n_window_obs             0.000000
