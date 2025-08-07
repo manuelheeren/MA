@@ -17,18 +17,14 @@ logger = logging.getLogger(__name__)
 class Asset(Enum):
     XAUUSD = "XAUUSD"
     BTCUSD = "BTCUSD"
-    SPYUSD = "SPYUSD"
     WTI = "WTI"
     BRENT = "BRENT"
-    COCOA = "COCOA"
-    COFFEE = "COFFEE"
     COPPER = "COPPER"
     COTTON = "COTTON"
     DIESEL = "DIESEL"
     ETHUSD = "ETHUSD"
     GAS = "GAS"
     LIGHT = "LIGHT"
-    OJUICE = "OJUICE"
     SOYBEAN = "SOYBEAN"
     SUGAR = "SUGAR"
     TRXUSD = "TRXUSD"
@@ -200,10 +196,10 @@ class TradingStrategy:
         min_price_30 = enriched_context.get("min_price_30")
         max_price_30 = enriched_context.get("max_price_30")
 
-        print("📦 Creating TradeSetup with:")
+        """print("📦 Creating TradeSetup with:")
         print(f"  entry_time: {entry_time}")
         print(f"  atr_14: {atr_14}, ma_14: {ma_14}, min_price_30: {min_price_30}, max_price_30: {max_price_30}")
-        print(f"  context keys: {list(context.keys())}")
+        print(f"  context keys: {list(context.keys())}")"""
 
  
         # Return the TradeSetup object
@@ -520,17 +516,15 @@ def get_bet_sizing(method: BetSizingMethod, past_returns: pd.Series = None) -> B
     if method == BetSizingMethod.KELLY:
         return KellyBetSizing(window_size=100, fallback_fraction=0.02)
     elif method == BetSizingMethod.FIXED:
-        return FixedFractionalBetSizing(investment_fraction=0.2)
+        return FixedFractionalBetSizing(investment_fraction=0.1)
     elif method == BetSizingMethod.FIXED_AMOUNT:
-        return FixedBetSize(fixed_trade_size=20000)
+        return FixedBetSize(fixed_trade_size=10000)
     elif method == BetSizingMethod.PERCENT_VOLATILITY:
-        return PercentVolatilityBetSizing(risk_fraction=0.01)
+        return PercentVolatilityBetSizing(risk_fraction=0.0075)
     elif method == BetSizingMethod.OPTIMAL_F:
-        return OptimalF(min_trades=20, default_fraction=0.01)
+        return OptimalF(min_trades=7, default_fraction=0.01)
     else:
         raise ValueError(f"Unsupported bet sizing method: {method}")
-
-
 
 class RollingMetrics:
     def __init__(self, window_size=30):

@@ -184,7 +184,7 @@ class KellyBetSizing:
 class FixedFractionalBetSizing:
     requires_context = True  
 
-    def __init__(self, investment_fraction: float = 0.2):
+    def __init__(self, investment_fraction: float = 0.1):
         self.investment_fraction = investment_fraction  # e.g., 0.01 for 1% of equity
 
     def compute_position(
@@ -228,7 +228,7 @@ class FixedFractionalBetSizing:
 
 
 class FixedBetSize:
-    def __init__(self, fixed_trade_size: float = 20000):
+    def __init__(self, fixed_trade_size: float = 10000):
         self.fixed_trade_size = fixed_trade_size
 
     def compute_position(
@@ -276,7 +276,7 @@ class FixedBetSize:
 class PercentVolatilityBetSizing:
     requires_context = True
 
-    def __init__(self, risk_fraction: float = 0.01, atr_column: str = 'atr_14'):
+    def __init__(self, risk_fraction: float = 0.02, atr_column: str = 'atr_14'):
         self.risk_fraction = risk_fraction
         self.atr_column = atr_column
         self.limit_hit_counter = 0
@@ -323,7 +323,7 @@ class PercentVolatilityBetSizing:
 class OptimalF:
     requires_context = True
 
-    def __init__(self, min_trades: int = 20, default_fraction: float = 0.01):
+    def __init__(self, min_trades: int = 20, default_fraction: float = 0.1):
         self.min_trades = min_trades
         self.default_fraction = default_fraction
         self.trade_returns_by_session = {}  # Dict: session → list of h values

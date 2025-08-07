@@ -1,0 +1,8 @@
+
+
+=== Regime Analysis ===
+
+🔹 Baseline Strategy:
+  Bear: Trades = 966, Avg PnL = 0.77, Total PnL = 745.12, Win Rate = 44.62%
+  Bull: Trades = 928, Avg PnL = -0.68, Total PnL = -629.71, Win Rate = 44.18%
+  Neutral: Trades = 58, Avg PnL = 3.77, Total PnL = 218.57, Win Rate = 46.55%

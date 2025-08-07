@@ -1,5 +1,0 @@
-
-=== XAUUSD Backtest Results ===
-Bet Sizing Strategy: fixedbetsize
-
-No trades were generated during the test period.

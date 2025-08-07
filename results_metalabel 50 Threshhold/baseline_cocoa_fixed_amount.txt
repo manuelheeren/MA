@@ -1,0 +1,93 @@
+
+=== COCOA Backtest Results ===
+Bet Sizing Strategy: fixedbetsize
+
+Period: 2023-07-04 to 2024-12-31
+
+ASIAN Session Performance:
+Initial Capital: $100,000.00
+Final Capital: $100,000.00
+Total PnL: $0.00
+Return: 0.00%
+Win Rate: 0.00% (0W/391L)
+Max Drawdown: 0.00%
+Sharpe Ratio: nan
+Skewness: 0.000
+Excess Kurtosis: -3.000
+
+Attempt Analysis:
+
+  Attempt 1:
+  Trades: 391 (100.0% of session trades)
+  PnL: $0.00
+  Win Rate: 0.00% (0W/391L)
+  Average Win: $0.00
+  Average Loss: $0.00
+
+LONDON Session Performance:
+Initial Capital: $100,000.00
+Final Capital: $96,845.49
+Total PnL: $-3,154.51
+Return: -3.15%
+Win Rate: 37.30% (273W/459L)
+Max Drawdown: 4.32%
+Sharpe Ratio: -1.12
+Skewness: 0.936
+Excess Kurtosis: -0.371
+
+Attempt Analysis:
+
+  Attempt 1:
+  Trades: 391 (53.4% of session trades)
+  PnL: $-1,480.26
+  Win Rate: 44.50% (174W/217L)
+  Average Win: $49.54
+  Average Loss: $-50.00
+
+  Attempt 2:
+  Trades: 202 (27.6% of session trades)
+  PnL: $-1,810.71
+  Win Rate: 28.71% (58W/144L)
+  Average Win: $89.39
+  Average Loss: $-48.58
+
+  Attempt 3:
+  Trades: 139 (19.0% of session trades)
+  PnL: $136.46
+  Win Rate: 29.50% (41W/98L)
+  Average Win: $120.88
+  Average Loss: $-49.18
+
+US Session Performance:
+Initial Capital: $100,000.00
+Final Capital: $102,328.57
+Total PnL: $2,328.57
+Return: 2.33%
+Win Rate: 45.37% (304W/366L)
+Max Drawdown: 1.40%
+Sharpe Ratio: 0.93
+Skewness: 0.567
+Excess Kurtosis: -0.985
+
+Attempt Analysis:
+
+  Attempt 1:
+  Trades: 391 (58.4% of session trades)
+  PnL: $189.72
+  Win Rate: 49.10% (192W/199L)
+  Average Win: $48.67
+  Average Loss: $-49.75
+
+  Attempt 2:
+  Trades: 183 (27.3% of session trades)
+  PnL: $2,133.40
+  Win Rate: 44.26% (81W/102L)
+  Average Win: $86.62
+  Average Loss: $-47.87
+
+  Attempt 3:
+  Trades: 96 (14.3% of session trades)
+  PnL: $5.45
+  Win Rate: 32.29% (31W/65L)
+  Average Win: $102.58
+  Average Loss: $-48.84

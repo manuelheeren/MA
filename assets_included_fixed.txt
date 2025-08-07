@@ -1,0 +1,14 @@
+brent
+btcusd
+copper
+cotton
+diesel
+ethusd
+gas
+light
+ojuice
+soybean
+sugar
+wti
+xagusd
+xauusd

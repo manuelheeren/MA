@@ -1,0 +1,93 @@
+
+=== OJUICE Backtest Results ===
+Bet Sizing Strategy: fixedbetsize
+
+Period: 2023-07-04 to 2024-12-31
+
+ASIAN Session Performance:
+Initial Capital: $100,000.00
+Final Capital: $100,000.00
+Total PnL: $0.00
+Return: 0.00%
+Win Rate: 0.00% (0W/391L)
+Max Drawdown: 0.00%
+Sharpe Ratio: nan
+Skewness: 0.000
+Excess Kurtosis: -3.000
+
+Attempt Analysis:
+
+  Attempt 1:
+  Trades: 391 (100.0% of session trades)
+  PnL: $0.00
+  Win Rate: 0.00% (0W/391L)
+  Average Win: $0.00
+  Average Loss: $0.00
+
+LONDON Session Performance:
+Initial Capital: $100,000.00
+Final Capital: $90,814.43
+Total PnL: $-9,185.57
+Return: -9.19%
+Win Rate: 31.93% (243W/518L)
+Max Drawdown: 9.20%
+Sharpe Ratio: -3.37
+Skewness: 1.095
+Excess Kurtosis: -0.099
+
+Attempt Analysis:
+
+  Attempt 1:
+  Trades: 391 (51.4% of session trades)
+  PnL: $-2,506.47
+  Win Rate: 41.69% (163W/228L)
+  Average Win: $50.00
+  Average Loss: $-49.80
+
+  Attempt 2:
+  Trades: 213 (28.0% of session trades)
+  PnL: $-3,067.93
+  Win Rate: 24.88% (53W/160L)
+  Average Win: $90.84
+  Average Loss: $-49.27
+
+  Attempt 3:
+  Trades: 157 (20.6% of session trades)
+  PnL: $-3,611.18
+  Win Rate: 17.20% (27W/130L)
+  Average Win: $106.31
+  Average Loss: $-49.86
+
+US Session Performance:
+Initial Capital: $100,000.00
+Final Capital: $98,891.78
+Total PnL: $-1,108.22
+Return: -1.11%
+Win Rate: 40.66% (285W/416L)
+Max Drawdown: 1.91%
+Sharpe Ratio: -0.41
+Skewness: 0.808
+Excess Kurtosis: -0.547
+
+Attempt Analysis:
+
+  Attempt 1:
+  Trades: 391 (55.8% of session trades)
+  PnL: $640.74
+  Win Rate: 49.87% (195W/196L)
+  Average Win: $49.34
+  Average Loss: $-49.89
+
+  Attempt 2:
+  Trades: 179 (25.5% of session trades)
+  PnL: $-2,439.29
+  Win Rate: 26.26% (47W/132L)
+  Average Win: $87.55
+  Average Loss: $-49.65
+
+  Attempt 3:
+  Trades: 131 (18.7% of session trades)
+  PnL: $690.33
+  Win Rate: 32.82% (43W/88L)
+  Average Win: $114.18
+  Average Loss: $-47.95

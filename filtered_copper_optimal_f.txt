@@ -1,0 +1,8 @@
+
+
+=== Regime Analysis ===
+
+🔹 Meta-Filtered Strategy:
+  Bear: Trades = 79, Avg PnL = -2.00, Total PnL = -158.37, Win Rate = 54.43%
+  Bull: Trades = 620, Avg PnL = -1.65, Total PnL = -1025.84, Win Rate = 48.23%
+  Neutral: Trades = 1, Avg PnL = -4.98, Total PnL = -4.98, Win Rate = 0.00%

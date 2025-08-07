@@ -1,0 +1,40 @@
+
+
+=== Regime Analysis ===
+
+🔹 Meta-Filtered Strategy:
+  Bear: Trades = 27, Avg PnL = -4.79, Total PnL = -129.20, Win Rate = 51.85%
+  Bull: Trades = 121, Avg PnL = 1.99, Total PnL = 241.02, Win Rate = 61.16%
+  Neutral: Trades = 393, Avg PnL = -1.95, Total PnL = -767.21, Win Rate = 46.31%
+
+
+=== Regime Analysis ===
+
+🔹 Meta-Filtered Strategy:
+  Bear: Trades = 27, Avg PnL = -2.19, Total PnL = -59.10, Win Rate = 51.85%
+  Bull: Trades = 121, Avg PnL = -0.96, Total PnL = -115.82, Win Rate = 61.16%
+  Neutral: Trades = 393, Avg PnL = -1.27, Total PnL = -498.92, Win Rate = 46.31%
+
+
+=== Regime Analysis ===
+
+🔹 Meta-Filtered Strategy:
+  Bear: Trades = 27, Avg PnL = -3.87, Total PnL = -104.52, Win Rate = 51.85%
+  Bull: Trades = 121, Avg PnL = 8.92, Total PnL = 1079.24, Win Rate = 61.16%
+  Neutral: Trades = 393, Avg PnL = -0.24, Total PnL = -95.90, Win Rate = 46.31%
+
+
+=== Regime Analysis ===
+
+🔹 Meta-Filtered Strategy:
+  Bear: Trades = 27, Avg PnL = -3.87, Total PnL = -104.52, Win Rate = 51.85%
+  Bull: Trades = 121, Avg PnL = 8.92, Total PnL = 1079.24, Win Rate = 61.16%
+  Neutral: Trades = 393, Avg PnL = -0.24, Total PnL = -95.90, Win Rate = 46.31%
+
+
+=== Regime Analysis ===
+
+🔹 Meta-Filtered Strategy:
+  Bear: Trades = 27, Avg PnL = -4.79, Total PnL = -129.20, Win Rate = 51.85%
+  Bull: Trades = 121, Avg PnL = 1.99, Total PnL = 241.02, Win Rate = 61.16%
+  Neutral: Trades = 393, Avg PnL = -1.95, Total PnL = -767.21, Win Rate = 46.31%

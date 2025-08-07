@@ -1,0 +1,56 @@
+
+
+=== Regime Analysis ===
+
+🔹 Baseline Strategy:
+  Bear: Trades = 147, Avg PnL = 10.92, Total PnL = 1604.60, Win Rate = 43.54%
+  Bull: Trades = 379, Avg PnL = 66.28, Total PnL = 25118.74, Win Rate = 56.20%
+  Neutral: Trades = 1355, Avg PnL = -11.21, Total PnL = -15189.71, Win Rate = 44.65%
+
+
+=== Regime Analysis ===
+
+🔹 Baseline Strategy:
+  Bear: Trades = 147, Avg PnL = 4.84, Total PnL = 711.56, Win Rate = 43.54%
+  Bull: Trades = 379, Avg PnL = 31.63, Total PnL = 11987.57, Win Rate = 56.20%
+  Neutral: Trades = 1355, Avg PnL = -5.76, Total PnL = -7803.55, Win Rate = 44.65%
+
+
+=== Regime Analysis ===
+
+🔹 Baseline Strategy:
+  Bear: Trades = 147, Avg PnL = 7.72, Total PnL = 1135.03, Win Rate = 43.54%
+  Bull: Trades = 379, Avg PnL = 48.78, Total PnL = 18486.44, Win Rate = 56.20%
+  Neutral: Trades = 1355, Avg PnL = -8.51, Total PnL = -11525.65, Win Rate = 44.65%
+
+
+=== Regime Analysis ===
+
+🔹 Baseline Strategy:
+  Bear: Trades = 147, Avg PnL = 1.79, Total PnL = 263.22, Win Rate = 43.54%
+  Bull: Trades = 379, Avg PnL = 12.22, Total PnL = 4631.91, Win Rate = 56.20%
+  Neutral: Trades = 1355, Avg PnL = -2.34, Total PnL = -3177.45, Win Rate = 44.65%
+
+
+=== Regime Analysis ===
+
+🔹 Baseline Strategy:
+  Bear: Trades = 147, Avg PnL = 16.69, Total PnL = 2453.31, Win Rate = 43.54%
+  Bull: Trades = 379, Avg PnL = 96.38, Total PnL = 36528.63, Win Rate = 56.20%
+  Neutral: Trades = 1355, Avg PnL = -19.86, Total PnL = -26903.98, Win Rate = 44.65%
+
+
+=== Regime Analysis ===
+
+🔹 Baseline Strategy:
+  Bear: Trades = 147, Avg PnL = 7.72, Total PnL = 1135.03, Win Rate = 43.54%
+  Bull: Trades = 379, Avg PnL = 48.78, Total PnL = 18486.44, Win Rate = 56.20%
+  Neutral: Trades = 1355, Avg PnL = -8.51, Total PnL = -11525.65, Win Rate = 44.65%
+
+
+=== Regime Analysis ===
+
+🔹 Baseline Strategy:
+  Bear: Trades = 147, Avg PnL = 7.72, Total PnL = 1135.03, Win Rate = 43.54%
+  Bull: Trades = 379, Avg PnL = 48.78, Total PnL = 18486.44, Win Rate = 56.20%
+  Neutral: Trades = 1355, Avg PnL = -8.51, Total PnL = -11525.65, Win Rate = 44.65%

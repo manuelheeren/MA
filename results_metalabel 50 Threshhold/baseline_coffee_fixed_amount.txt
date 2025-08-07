@@ -1,0 +1,93 @@
+
+=== COFFEE Backtest Results ===
+Bet Sizing Strategy: fixedbetsize
+
+Period: 2023-07-04 to 2024-12-31
+
+ASIAN Session Performance:
+Initial Capital: $100,000.00
+Final Capital: $100,000.00
+Total PnL: $0.00
+Return: 0.00%
+Win Rate: 0.00% (0W/391L)
+Max Drawdown: 0.00%
+Sharpe Ratio: nan
+Skewness: 0.000
+Excess Kurtosis: -3.000
+
+Attempt Analysis:
+
+  Attempt 1:
+  Trades: 391 (100.0% of session trades)
+  PnL: $0.00
+  Win Rate: 0.00% (0W/391L)
+  Average Win: $0.00
+  Average Loss: $0.00
+
+LONDON Session Performance:
+Initial Capital: $100,000.00
+Final Capital: $98,225.11
+Total PnL: $-1,774.89
+Return: -1.77%
+Win Rate: 38.82% (276W/435L)
+Max Drawdown: 2.35%
+Sharpe Ratio: -0.64
+Skewness: 0.841
+Excess Kurtosis: -0.576
+
+Attempt Analysis:
+
+  Attempt 1:
+  Trades: 391 (55.0% of session trades)
+  PnL: $250.00
+  Win Rate: 48.59% (190W/201L)
+  Average Win: $50.00
+  Average Loss: $-50.00
+
+  Attempt 2:
+  Trades: 185 (26.0% of session trades)
+  PnL: $-1,750.00
+  Win Rate: 27.03% (50W/135L)
+  Average Win: $100.00
+  Average Loss: $-50.00
+
+  Attempt 3:
+  Trades: 135 (19.0% of session trades)
+  PnL: $-274.89
+  Win Rate: 26.67% (36W/99L)
+  Average Win: $126.77
+  Average Loss: $-48.87
+
+US Session Performance:
+Initial Capital: $100,000.00
+Final Capital: $97,981.06
+Total PnL: $-2,018.94
+Return: -2.02%
+Win Rate: 39.69% (285W/433L)
+Max Drawdown: 1.98%
+Sharpe Ratio: -0.75
+Skewness: 0.717
+Excess Kurtosis: -0.892
+
+Attempt Analysis:
+
+  Attempt 1:
+  Trades: 391 (54.5% of session trades)
+  PnL: $-650.00
+  Win Rate: 46.29% (181W/210L)
+  Average Win: $50.00
+  Average Loss: $-50.00
+
+  Attempt 2:
+  Trades: 194 (27.0% of session trades)
+  PnL: $-1,129.20
+  Win Rate: 30.41% (59W/135L)
+  Average Win: $94.51
+  Average Loss: $-49.67
+
+  Attempt 3:
+  Trades: 133 (18.5% of session trades)
+  PnL: $-239.74
+  Win Rate: 33.83% (45W/88L)
+  Average Win: $89.37
+  Average Loss: $-48.43
