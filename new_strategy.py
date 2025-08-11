@@ -138,7 +138,8 @@ class TradingStrategy:
         available_cash = self._get_session_available_cash(session)
 
         # Extract all needed features from self.data (safe access)
-        price_features = ["ma_14", "min_price_30", "max_price_30", "atr_14","daily_return","daily_volatility","t10yie","vix_close","day_of_week", "hour_of_day","dgs10","avg_return_30d","drawdown_30",'close', 'drawdown_static', 'high', 'daily_low', 'week_number', 'max_price_14', 'true_range', 'daily_high', 'low', 'volume', 'dtwexbgs', 'open', 'min_price_14', 'cpiaucsl', 'daily_close','volume_shifted']
+        price_features = ["ma_14", "min_price_30", "max_price_30", "atr_14","daily_return","daily_volatility","t10yie","vix_close","day_of_week", "hour_of_day","dgs10","avg_return_30d","drawdown_30",'close', 'drawdown_static', 'high', 'daily_low', 'week_number', 'max_price_14', 'true_range', 'daily_high', 'low', 'volume', 'dtwexbgs', 'open', 'min_price_14', 'cpiaucsl', 'daily_close','volume_shifted',"ret_5m","ret_15m","ret_30m","vol_5m","vol_15m","vol_30m","range_5m","range_15m","ma14_slope_5","pos_in_day_range","ret30m_voladj","vol_ratio_5_30","range15m_voladj","atr_z_60","vix_z_60","hour_sin","hour_cos","dow_sin","dow_cos","breakout_30_up","breakout_30_dn","vixz_x_ret30m","skew_30","kurt_30"
+]
         context = {}
 
         if entry_time in self.data.index:
@@ -477,6 +478,30 @@ class TradingStrategy:
                 'cpiaucsl': self.data.at[t.entry_time, 'cpiaucsl'] if t.entry_time in self.data.index else None,
                 'daily_close': self.data.at[t.entry_time, 'daily_close'] if t.entry_time in self.data.index else None,
                 'volume_shifted': self.data.at[t.entry_time, 'volume_shifted'] if t.entry_time in self.data.index else None,
+                'ret_5m': self.data.at[t.entry_time, 'ret_5m'] if t.entry_time in self.data.index else None,
+                'ret_15m': self.data.at[t.entry_time, 'ret_15m'] if t.entry_time in self.data.index else None,
+                'ret_30m': self.data.at[t.entry_time, 'ret_30m'] if t.entry_time in self.data.index else None,
+                'vol_5m': self.data.at[t.entry_time, 'vol_5m'] if t.entry_time in self.data.index else None,
+                'vol_15m': self.data.at[t.entry_time, 'vol_15m'] if t.entry_time in self.data.index else None,
+                'vol_30m': self.data.at[t.entry_time, 'vol_30m'] if t.entry_time in self.data.index else None,
+                'range_5m': self.data.at[t.entry_time, 'range_5m'] if t.entry_time in self.data.index else None,
+                'range_15m': self.data.at[t.entry_time, 'range_15m'] if t.entry_time in self.data.index else None,
+                'ma14_slope_5': self.data.at[t.entry_time, 'ma14_slope_5'] if t.entry_time in self.data.index else None,
+                'pos_in_day_range': self.data.at[t.entry_time, 'pos_in_day_range'] if t.entry_time in self.data.index else None,
+                'ret30m_voladj': self.data.at[t.entry_time, 'ret30m_voladj'] if t.entry_time in self.data.index else None,
+                'vol_ratio_5_30': self.data.at[t.entry_time, 'vol_ratio_5_30'] if t.entry_time in self.data.index else None,
+                'range15m_voladj': self.data.at[t.entry_time, 'range15m_voladj'] if t.entry_time in self.data.index else None,
+                'atr_z_60': self.data.at[t.entry_time, 'atr_z_60'] if t.entry_time in self.data.index else None,
+                'vix_z_60': self.data.at[t.entry_time, 'vix_z_60'] if t.entry_time in self.data.index else None,
+                'hour_sin': self.data.at[t.entry_time, 'hour_sin'] if t.entry_time in self.data.index else None,
+                'hour_cos': self.data.at[t.entry_time, 'hour_cos'] if t.entry_time in self.data.index else None,
+                'dow_sin': self.data.at[t.entry_time, 'dow_sin'] if t.entry_time in self.data.index else None,
+                'dow_cos': self.data.at[t.entry_time, 'dow_cos'] if t.entry_time in self.data.index else None,
+                'breakout_30_up': self.data.at[t.entry_time, 'breakout_30_up'] if t.entry_time in self.data.index else None,
+                'breakout_30_dn': self.data.at[t.entry_time, 'breakout_30_dn'] if t.entry_time in self.data.index else None,
+                'skew_30': self.data.at[t.entry_time, 'skew_30'] if t.entry_time in self.data.index else None,
+                'kurt_30': self.data.at[t.entry_time, 'kurt_30'] if t.entry_time in self.data.index else None,
+
 
 
 
@@ -536,7 +561,7 @@ class RollingMetrics:
         self.rolling_precision = []
         self.rolling_recall = []
         self.total_seen = 0
-
+        
     def update(self, y_true_val, y_pred_val):
         self.y_true.append(y_true_val)
         self.y_pred.append(y_pred_val)
@@ -570,4 +595,54 @@ class RollingMetrics:
             "rolling_recall": safe_get(self.rolling_recall),
             "n_total_seen": self.total_seen,
             "n_window_obs": len(self.y_true) 
+        }
+
+class RollingMetrics:
+    def __init__(self, window_size=30):
+        self.window_size = window_size
+        self.y_true = deque(maxlen=window_size)
+        self.y_pred = deque(maxlen=window_size)
+        self.rolling_accuracy = []
+        self.rolling_f1 = []
+        self.rolling_precision = []
+        self.rolling_recall = []
+        self.total_seen = 0
+        
+    def update(self, y_true_val, y_pred_val, pnl_val=None):  # Added optional P&L
+        self.y_true.append(y_true_val)
+        self.y_pred.append(y_pred_val)
+        self.total_seen += 1
+
+        if len(self.y_pred) == self.window_size:
+            print(f"\n📊 Rolling Window Debug (last {self.window_size} trades):")
+            print(f"  y_true counts: {np.bincount(self.y_true)}")
+            print(f"  y_pred counts: {np.bincount(self.y_pred)}")
+        
+        if len(self.y_true) > 0:
+            # Existing metrics
+            self.rolling_accuracy.append(accuracy_score(self.y_true, self.y_pred))
+            self.rolling_precision.append(precision_score(self.y_true, self.y_pred, zero_division=0))
+            self.rolling_recall.append(recall_score(self.y_true, self.y_pred, zero_division=0))
+            self.rolling_f1.append(f1_score(self.y_true, self.y_pred, zero_division=0))
+            
+            
+        else:
+            # Handle empty case
+            self.rolling_accuracy.append(None)
+            self.rolling_precision.append(None) 
+            self.rolling_recall.append(None)
+            self.rolling_f1.append(None)
+       
+
+    def latest(self):
+        def safe_get(lst):
+            return lst[-1] if lst else None
+
+        return {
+            "rolling_accuracy": safe_get(self.rolling_accuracy),
+            "rolling_f1": safe_get(self.rolling_f1),
+            "rolling_precision": safe_get(self.rolling_precision),
+            "rolling_recall": safe_get(self.rolling_recall),
+            "n_total_seen": self.total_seen,
+            "n_window_obs": len(self.y_true)
         }

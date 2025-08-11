@@ -36,7 +36,8 @@ class MetaLabelingStrategy(TradingStrategy):
         }
 
         # FIX: Add feature columns into context just like base strategy
-        feature_cols = ['atr_14', 'ma_14', 'min_price_30', 'max_price_30','daily_return', 'daily_volatility', 't10yie', 'vix_close',"day_of_week", "hour_of_day","dgs10","avg_return_30d","drawdown_30",'close', 'drawdown_static', 'high', 'daily_low', 'week_number', 'max_price_14', 'true_range', 'daily_high', 'low', 'volume', 'dtwexbgs', 'open', 'min_price_14', 'cpiaucsl', 'daily_close','volume_shifted']
+        feature_cols = ['atr_14', 'ma_14', 'min_price_30', 'max_price_30','daily_return', 'daily_volatility', 't10yie', 'vix_close',"day_of_week", "hour_of_day","dgs10","avg_return_30d","drawdown_30",'close', 'drawdown_static', 'high', 'daily_low', 'week_number', 'max_price_14', 'true_range', 'daily_high', 'low', 'volume', 'dtwexbgs', 'open', 'min_price_14', 'cpiaucsl', 'daily_close','volume_shifted',"ret_5m","ret_15m","ret_30m","vol_5m","vol_15m","vol_30m","range_5m","range_15m","ma14_slope_5","pos_in_day_range","ret30m_voladj","vol_ratio_5_30","range15m_voladj","atr_z_60","vix_z_60","hour_sin","hour_cos","dow_sin","dow_cos","breakout_30_up","breakout_30_dn","skew_30","kurt_30"
+]
         if entry_time in self.data.index:
             for col in feature_cols:
                 context[col] = self.data.at[entry_time, col]
